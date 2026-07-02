@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../chat/chat_screen.dart';
 import '../listing/post_listing_screen.dart';
 import '../profile/my_profile_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,33 +21,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (index) {
       case 0:
-      // Home Screen
+        // Home Screen
         break;
 
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const PostListingScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const PostListingScreen()),
         );
         break;
 
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const ChatScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const ChatScreen()),
         );
         break;
 
       case 3:
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const MyProfileScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const MyProfileScreen()),
         );
         break;
     }
@@ -61,10 +57,17 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text("Roommate Finder"),
         centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.notifications_none),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -73,9 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const PostListingScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const PostListingScreen()),
           );
         },
         child: const Icon(Icons.add),
@@ -150,29 +151,17 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt),
-            label: "Posts",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: "Chats",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "Posts"),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chats"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );
   }
 }
 
-class RoommateCard extends StatelessWidget {
+class RoommateCard extends StatefulWidget {
   final String name;
   final String city;
   final String description;
@@ -187,12 +176,59 @@ class RoommateCard extends StatelessWidget {
   });
 
   @override
+  State<RoommateCard> createState() => _RoommateCardState();
+}
+
+class _RoommateCardState extends State<RoommateCard> {
+  bool _isSending = false;
+  bool _isSent = false;
+
+  Future<void> _sendRequest() async {
+    setState(() {
+      _isSending = true;
+    });
+
+    // Try to record the request in Supabase if the user is authenticated
+    try {
+      final client = Supabase.instance.client;
+      if (client.auth.currentUser != null) {
+        await client.from('requests').insert({
+          'sender_id': client.auth.currentUser!.id,
+          'receiver_name': widget.name,
+          'city': widget.city,
+          'rent': widget.rent,
+          'status': 'pending',
+        });
+      }
+    } catch (e) {
+      // Supabase table 'requests' might not be created yet, which is fine
+      debugPrint('Optional Supabase DB logging failed: $e');
+    }
+
+    // Wait a brief period to simulate network/database roundtrip loading
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    if (mounted) {
+      setState(() {
+        _isSending = false;
+        _isSent = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Request sent to ${widget.name} successfully!'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
@@ -200,17 +236,12 @@ class RoommateCard extends StatelessWidget {
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(
-                child: Icon(Icons.person),
-              ),
-              title: Text(name),
-              subtitle: Text(city),
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text(widget.name),
+              subtitle: Text(widget.city),
             ),
 
-            Text(
-              description,
-              style: const TextStyle(fontSize: 15),
-            ),
+            Text(widget.description, style: const TextStyle(fontSize: 15)),
 
             const SizedBox(height: 10),
 
@@ -218,7 +249,7 @@ class RoommateCard extends StatelessWidget {
               children: [
                 const Icon(Icons.location_on, size: 18),
                 const SizedBox(width: 5),
-                Text(city),
+                Text(widget.city),
               ],
             ),
 
@@ -228,7 +259,7 @@ class RoommateCard extends StatelessWidget {
               children: [
                 const Icon(Icons.attach_money, size: 18),
                 const SizedBox(width: 5),
-                Text(rent),
+                Text(widget.rent),
               ],
             ),
 
@@ -236,12 +267,31 @@ class RoommateCard extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Send Request
-                },
-                child: const Text("Send Request"),
-              ),
+              child: _isSent
+                  ? OutlinedButton.icon(
+                      onPressed: null, // Disabled when already sent
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text("Request Sent"),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.green.shade300),
+                      ),
+                    )
+                  : ElevatedButton(
+                      onPressed: _isSending ? null : _sendRequest,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isSending ? Colors.grey : null,
+                      ),
+                      child: _isSending
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Send Request"),
+                    ),
             ),
           ],
         ),

@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
@@ -43,23 +44,34 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text,
       );
 
-      if (response.user != null || response.session != null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created. Please login.')),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+      final user = response.user;
+
+      if (user == null) {
+        _showError('Unable to create account. Please try again.');
         return;
       }
 
-      _showError('Unable to create account. Please try again.');
+      // ✅ Insert profile into database
+      await Supabase.instance.client.from('profiles').insert({
+        'id': user.id,
+        'full_name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'avatar_url': null,
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created successfully')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     } catch (e) {
-      final message = e is AuthException
-          ? e.message
-          : 'Signup failed. Please try again.';
+      final message =
+      e is AuthException ? e.message : 'Signup failed. Please try again.';
       _showError(message);
     } finally {
       if (mounted) {
@@ -69,9 +81,9 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -95,6 +107,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 30),
+
+              // NAME
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -102,18 +116,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   prefixIcon: Icon(Icons.person_outline),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                value == null || value.isEmpty ? 'Enter name' : null,
               ),
               const SizedBox(height: 16),
+
+              // EMAIL
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
                 decoration: const InputDecoration(
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.email_outlined),
@@ -121,15 +132,18 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
+                    return 'Enter email';
                   }
-                  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
-                    return 'Enter a valid email';
+                  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                      .hasMatch(value)) {
+                    return 'Enter valid email';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
+
+              // PHONE
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -138,17 +152,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   prefixIcon: Icon(Icons.phone_outlined),
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your phone number';
-                  }
-                  if (value.length < 10) {
-                    return 'Enter a valid phone number';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                value == null || value.length < 10
+                    ? 'Enter valid phone'
+                    : null,
               ),
               const SizedBox(height: 16),
+
+              // PASSWORD
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -163,21 +174,19 @@ class _SignupScreenState extends State<SignupScreen> {
                           : Icons.visibility,
                     ),
                     onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
+                      setState(
+                              () => _obscurePassword = !_obscurePassword);
                     },
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                value != null && value.length < 6
+                    ? 'Min 6 characters'
+                    : null,
               ),
               const SizedBox(height: 16),
+
+              // CONFIRM PASSWORD
               TextFormField(
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
@@ -187,16 +196,19 @@ class _SignupScreenState extends State<SignupScreen> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                      _obscureConfirm
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
-                      setState(() => _obscureConfirm = !_obscureConfirm);
+                      setState(
+                              () => _obscureConfirm = !_obscureConfirm);
                     },
                   ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
+                    return 'Confirm password';
                   }
                   if (value != _passwordController.text) {
                     return 'Passwords do not match';
@@ -204,30 +216,25 @@ class _SignupScreenState extends State<SignupScreen> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 30),
+
+              // BUTTON
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Create Account',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                      ? const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  )
+                      : const Text('Create Account'),
                 ),
               ),
+
               const SizedBox(height: 16),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
