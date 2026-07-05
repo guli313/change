@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
 
+// ---- Theme colors (same palette as Login/Signup screens) ----
+const Color _kBackground = Color(0xFF0D0D0D);
+const Color _kAppBarBg = Color(0xFF121010);
+const Color _kFieldFill = Color(0xFF1A1717);
+const Color _kBubbleReceived = Color(0xFF1E1B1B);
+const Color _kGold = Color(0xFFCBA35C);
+const Color _kGoldLight = Color(0xFFE4C98A);
+const Color _kMaroonStart = Color(0xFF7A1F35);
+const Color _kMaroonEnd = Color(0xFF4E1220);
+const Color _kMutedText = Color(0xFF9B9B9B);
+const Color _kBorder = Color(0xFF2A2626);
+
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -11,9 +23,31 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, dynamic>> _messages = [
-    {'text': 'Hey, is the room still available?', 'isMe': false, 'time': '10:00 AM'},
-    {'text': 'Yes, it is! When would you like to visit?', 'isMe': true, 'time': '10:02 AM'},
-    {'text': 'Maybe this weekend? Saturday afternoon?', 'isMe': false, 'time': '10:05 AM'},
+    {
+      'text': 'Hi! I saw your post. Is the room still available?',
+      'isMe': true,
+      'time': '10:30 AM',
+    },
+    {
+      'text': 'Yes, it is available. Would you like to visit?',
+      'isMe': false,
+      'time': '10:32 AM',
+    },
+    {
+      'text': 'Sure! When are you free?',
+      'isMe': true,
+      'time': '10:33 AM',
+    },
+    {
+      'text': 'Tomorrow at 4 PM?',
+      'isMe': false,
+      'time': '10:34 AM',
+    },
+    {
+      'text': 'That works for me.',
+      'isMe': true,
+      'time': '10:35 AM',
+    },
   ];
 
   void _sendMessage() {
@@ -43,7 +77,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String _getCurrentTime() {
     final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final hour =
+    now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
     final minute = now.minute.toString().padLeft(2, '0');
     final period = now.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
@@ -58,42 +93,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
+      backgroundColor: _kBackground,
       appBar: AppBar(
+        backgroundColor: _kAppBarBg,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         titleSpacing: 0,
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: primaryColor.withOpacity(0.1),
-              child: Text(
-                'S',
-                style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
-              ),
+            const CircleAvatar(
+              radius: 20,
+              backgroundColor: _kFieldFill,
+              // Swap for a real avatar:
+              // backgroundImage: NetworkImage('...'),
+              child: Icon(Icons.person, color: _kGold, size: 22),
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Sarah Connor',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  'Hina Malik',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 Row(
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: 7,
+                      height: 7,
                       decoration: const BoxDecoration(
-                        color: Colors.green,
+                        color: Colors.greenAccent,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
+                    const SizedBox(width: 5),
+                    const Text(
                       'Online',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: _kMutedText),
                     ),
                   ],
                 ),
@@ -103,11 +144,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.phone),
+            icon: const Icon(Icons.call_outlined, color: _kGold),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: _kGold),
             onPressed: () {},
           ),
         ],
@@ -123,40 +164,67 @@ class _ChatScreenState extends State<ChatScreen> {
                 final msg = _messages[index];
                 final isMe = msg['isMe'] as bool;
                 return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                  isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.75,
                     ),
                     decoration: BoxDecoration(
-                      color: isMe ? primaryColor : Colors.grey[200],
+                      gradient: isMe
+                          ? const LinearGradient(
+                        colors: [_kMaroonStart, _kMaroonEnd],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                          : null,
+                      color: isMe ? null : _kBubbleReceived,
+                      border: isMe
+                          ? null
+                          : Border.all(color: _kBorder, width: 1),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
-                        bottomLeft: Radius.circular(isMe ? 16 : 0),
-                        bottomRight: Radius.circular(isMe ? 0 : 16),
+                        bottomLeft: Radius.circular(isMe ? 16 : 4),
+                        bottomRight: Radius.circular(isMe ? 4 : 16),
                       ),
                     ),
                     child: Column(
-                      crossAxisAlignment:
-                          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
                       children: [
                         Text(
                           msg['text'] as String,
                           style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black87,
+                            color: isMe ? Colors.white : Colors.white70,
                             fontSize: 15,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          msg['time'] as String,
-                          style: TextStyle(
-                            color: isMe ? Colors.white70 : Colors.black54,
-                            fontSize: 10,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              msg['time'] as String,
+                              style: TextStyle(
+                                color:
+                                isMe ? Colors.white70 : _kMutedText,
+                                fontSize: 10,
+                              ),
+                            ),
+                            if (isMe) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.done_all,
+                                size: 13,
+                                color: _kGoldLight,
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -166,47 +234,43 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: const BoxDecoration(
+              color: _kAppBarBg,
+              border: Border(top: BorderSide(color: _kBorder)),
             ),
             child: SafeArea(
+              top: false,
               child: Row(
                 children: [
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: _kFieldFill,
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: _kBorder),
                       ),
                       child: Row(
                         children: [
                           const SizedBox(width: 12),
-                          IconButton(
-                            icon: Icon(Icons.sentiment_satisfied_alt_outlined, color: Colors.grey[600]),
-                            onPressed: () {},
-                          ),
                           Expanded(
                             child: TextField(
                               controller: _messageController,
+                              style: const TextStyle(color: Colors.white),
                               decoration: const InputDecoration(
                                 hintText: 'Type a message...',
+                                hintStyle: TextStyle(color: _kMutedText),
                                 border: InputBorder.none,
                                 isDense: true,
-                                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                contentPadding:
+                                EdgeInsets.symmetric(vertical: 12),
                               ),
                               onSubmitted: (_) => _sendMessage(),
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.attach_file_outlined, color: Colors.grey[600]),
+                            icon: const Icon(Icons.attach_file_outlined,
+                                color: _kGold),
                             onPressed: () {},
                           ),
                         ],
@@ -216,9 +280,17 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: _sendMessage,
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: primaryColor,
+                    child: Container(
+                      width: 46,
+                      height: 46,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [_kMaroonStart, _kMaroonEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
                       child: const Icon(
                         Icons.send_rounded,
                         color: Colors.white,

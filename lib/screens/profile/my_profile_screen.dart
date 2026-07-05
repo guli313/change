@@ -1,8 +1,9 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/local_file.dart';
 import '../auth/login_screen.dart';
@@ -38,15 +39,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     _loadUser();
   }
 
-  void _loadUser() {
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
     final currentUser = Supabase.instance.client.auth.currentUser;
     final metadata = currentUser?.userMetadata ?? {};
-    final avatarPath = metadata['avatar_path'] as String?;
+    final savedAvatarPath = prefs.getString('profile_avatar_path');
+    final avatarPath = (metadata['avatar_path'] as String?) ?? savedAvatarPath;
+
+    if (!mounted) return;
 
     setState(() {
       _currentUser = currentUser;
-      if (avatarPath != null && avatarPath.isNotEmpty) {
-        final avatarFile = File(avatarPath);
+      if (!kIsWeb && avatarPath != null && avatarPath.isNotEmpty) {
+        final avatarFile = io.File(avatarPath);
         if (avatarFile.existsSync()) {
           _profileImage = XFile(avatarPath);
         } else {
@@ -96,6 +101,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _pickProfilePhoto(ImageSource source) async {
+    if (kIsWeb && source == ImageSource.camera) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Camera is not supported on web. Please use gallery instead.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     try {
       final pickedFile = await _picker.pickImage(
         source: source,
@@ -283,7 +301,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                                 fit: BoxFit.cover,
                                               )
                                             : Image.file(
-                                                File(_profileImage!.path),
+                                                io.File(_profileImage!.path),
                                                 fit: BoxFit.cover,
                                               ))
                                       : Center(

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -43,18 +43,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
 
-    _nameController =
-        TextEditingController(text: widget.currentData['name']);
-    _phoneController =
-        TextEditingController(text: widget.currentData['phone']);
-    _ageController =
-        TextEditingController(text: widget.currentData['age']);
-    _professionController =
-        TextEditingController(text: widget.currentData['profession']);
-    _budgetController =
-        TextEditingController(text: widget.currentData['maxBudget']);
-    _locationController =
-        TextEditingController(text: widget.currentData['preferredLocation']);
+    _nameController = TextEditingController(text: widget.currentData['name']);
+    _phoneController = TextEditingController(text: widget.currentData['phone']);
+    _ageController = TextEditingController(text: widget.currentData['age']);
+    _professionController = TextEditingController(
+      text: widget.currentData['profession'],
+    );
+    _budgetController = TextEditingController(
+      text: widget.currentData['maxBudget'],
+    );
+    _locationController = TextEditingController(
+      text: widget.currentData['preferredLocation'],
+    );
 
     _selectedGender = widget.currentData['gender'] ?? 'Male';
     _selectedPreferredRoommate =
@@ -78,6 +78,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // ---------------- PICK IMAGE ----------------
   Future<void> _pickProfilePhoto(ImageSource source) async {
+    if (kIsWeb && source == ImageSource.camera) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Camera is not supported on web. Please use gallery instead.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     final picked = await _picker.pickImage(
       source: source,
       imageQuality: 80,
@@ -102,14 +115,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final storagePath = 'profile_images/$fileName';
 
-      await supabase.storage.from('profile_images').uploadBinary(
-        storagePath,
-        fileBytes,
-        fileOptions: const FileOptions(
-          cacheControl: '3600',
-          upsert: true,
-        ),
-      );
+      await supabase.storage
+          .from('profile_images')
+          .uploadBinary(
+            storagePath,
+            fileBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
 
       final publicUrl = supabase.storage
           .from('profile_images')
@@ -148,9 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       };
 
       if (!widget.isGuest) {
-        await supabase.auth.updateUser(
-          UserAttributes(data: updatedData),
-        );
+        await supabase.auth.updateUser(UserAttributes(data: updatedData));
       }
 
       if (mounted) {
@@ -158,9 +168,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
       }
     } finally {
       if (mounted) {
@@ -206,7 +216,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     ImageProvider? avatarImage;
 
     if (_profileImage != null) {
-      avatarImage = FileImage(File(_profileImage!.path));
+      avatarImage = kIsWeb
+          ? NetworkImage(_profileImage!.path)
+          : FileImage(io.File(_profileImage!.path));
     } else if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
       avatarImage = NetworkImage(_avatarUrl!);
     }
@@ -225,10 +237,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _saveProfile,
-            ),
+            IconButton(icon: const Icon(Icons.check), onPressed: _saveProfile),
         ],
       ),
       body: Form(
