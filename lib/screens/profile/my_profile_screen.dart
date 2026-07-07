@@ -173,9 +173,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _logout() async {
+    await _signOut(navigateToLogin: true);
+  }
+
+  Future<void> _switchAccount() async {
+    await _signOut(navigateToLogin: true);
+  }
+
+  Future<void> _signOut({required bool navigateToLogin}) async {
     try {
       await Supabase.instance.client.auth.signOut();
-      if (mounted) {
+      if (mounted && navigateToLogin) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
           (route) => false,
@@ -188,6 +196,37 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         ).showSnackBar(SnackBar(content: Text('Error logging out: $e')));
       }
     }
+  }
+
+  void _confirmSignOut({
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onConfirm();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToEditProfile(Map<String, String> data, bool isGuest) async {
@@ -227,34 +266,31 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         title: const Text('My Profile'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Logout'),
-                  content: const Text('Are you sure you want to logout?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _logout();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Logout'),
-                    ),
-                  ],
-                ),
-              );
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'switch') {
+                _confirmSignOut(
+                  title: 'Switch Account',
+                  content:
+                      'You will be logged out and can sign in with a different account.',
+                  onConfirm: _switchAccount,
+                );
+              } else if (value == 'logout') {
+                _confirmSignOut(
+                  title: 'Logout',
+                  content: 'Are you sure you want to logout?',
+                  onConfirm: _logout,
+                );
+              }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'switch',
+                child: Text('Switch Account'),
+              ),
+              const PopupMenuItem(value: 'logout', child: Text('Logout')),
+            ],
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
@@ -464,6 +500,52 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            _confirmSignOut(
+                              title: 'Switch Account',
+                              content:
+                                  'You will be logged out and can sign in with a different account.',
+                              onConfirm: _switchAccount,
+                            );
+                          },
+                          icon: const Icon(Icons.switch_account),
+                          label: const Text('Switch Account'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: const BorderSide(color: Colors.black12),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            _confirmSignOut(
+                              title: 'Logout',
+                              content: 'Are you sure you want to logout?',
+                              onConfirm: _logout,
+                            );
+                          },
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text('Logout'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 40),
                 ],

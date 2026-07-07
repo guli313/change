@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../chat/chat_screen.dart';
 import '../listing/post_listing_screen.dart';
 import '../profile/my_profile_screen.dart';
+import 'filter_screen.dart';
 import 'notifications_screen.dart';
+import 'requests_screen.dart';
 
 // ---- Theme colors (same palette as Login/Signup/Chat screens) ----
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -27,7 +28,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
-  String _selectedFilter = 'All';
+  String _searchQuery = '';
+  FilterCriteria _activeFilter = const FilterCriteria();
+  final TextEditingController _searchController = TextEditingController();
 
   final List<String> _filters = const [
     'All',
@@ -74,20 +77,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (index) {
       case 0:
-      // Home
+        // Home
         break;
       case 1:
-      // TODO: hook up to a dedicated search screen if you add one
+        // TODO: hook up to a dedicated search screen if you add one
         break;
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const PostListingScreen()),
+          MaterialPageRoute(builder: (context) => const RequestsScreen()),
         );
-        return; // don't change the selected tab for the add action
+        break;
       case 3:
-      // TODO: hook up to a "My Requests" screen if you add one;
-      // routing to profile for now
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MyProfileScreen()),
@@ -102,6 +103,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => currentIndex = index);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, String>> get _filteredListings {
+    return _listings.where((listing) {
+      final title = listing['title']?.toLowerCase() ?? '';
+      final city = listing['city']?.toLowerCase() ?? '';
+      final tag = listing['tag']?.toLowerCase() ?? '';
+      final matchesSearch =
+          _searchQuery.isEmpty ||
+          title.contains(_searchQuery) ||
+          city.contains(_searchQuery) ||
+          tag.contains(_searchQuery);
+      final matchesLocation =
+          _activeFilter.location.isEmpty ||
+          city.contains(_activeFilter.location.toLowerCase());
+      final matchesBudget =
+          _activeFilter.budget.isEmpty ||
+          listing['rent']?.toLowerCase().contains(
+                _activeFilter.budget.toLowerCase(),
+              ) ==
+              true;
+      final matchesReligion =
+          _activeFilter.religion.isEmpty ||
+          tag.contains(_activeFilter.religion.toLowerCase());
+
+      return matchesSearch &&
+          matchesLocation &&
+          matchesBudget &&
+          matchesReligion;
+    }).toList();
   }
 
   @override
@@ -138,8 +175,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.notifications_none,
-                        color: _kGold, size: 26),
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: _kGold,
+                      size: 26,
+                    ),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -170,65 +210,51 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
+                        controller: _searchController,
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration(
                           hintText: 'Search city, area or keyword...',
                           hintStyle: TextStyle(
-                              color: _kMutedText, fontSize: 13.5),
+                            color: _kMutedText,
+                            fontSize: 13.5,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(vertical: 14),
                         ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.trim().toLowerCase();
+                          });
+                        },
                       ),
                     ),
                     IconButton(
-                      icon:
-                      const Icon(Icons.favorite_border, color: _kGold, size: 20),
+                      icon: const Icon(
+                        Icons.favorite_border,
+                        color: _kGold,
+                        size: 20,
+                      ),
                       onPressed: () {},
                     ),
                     IconButton(
                       icon: const Icon(Icons.tune, color: _kGold, size: 20),
-                      onPressed: () {},
+                      onPressed: () async {
+                        final result = await Navigator.push<FilterCriteria>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FilterScreen(),
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            _activeFilter = result;
+                          });
+                        }
+                      },
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // FILTER CHIPS
-            SizedBox(
-              height: 38,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemCount: _filters.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final label = _filters[index];
-                  final isSelected = label == _selectedFilter;
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: isSelected,
-                    onSelected: (_) {
-                      setState(() => _selectedFilter = label);
-                    },
-                    showCheckmark: false,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : _kMutedText,
-                      fontSize: 13,
-                      fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    backgroundColor: _kSurface,
-                    selectedColor: _kMaroon,
-                    side: BorderSide(
-                      color: isSelected ? _kMaroon : _kBorder,
-                    ),
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  );
-                },
               ),
             ),
             const SizedBox(height: 20),
@@ -268,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                itemCount: _listings.length,
+                itemCount: _filteredListings.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 14,
@@ -276,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   childAspectRatio: 0.68,
                 ),
                 itemBuilder: (context, index) {
-                  return ListingCard(data: _listings[index]);
+                  return ListingCard(data: _filteredListings[index]);
                 },
               ),
             ),
@@ -308,6 +334,12 @@ class _HomeScreenState extends State<HomeScreen> {
               _NavIcon(
                 icon: Icons.description_outlined,
                 label: 'Requests',
+                isActive: currentIndex == 2,
+                onTap: () => _onItemTapped(2),
+              ),
+              _NavIcon(
+                icon: Icons.person_outline,
+                label: 'Profile',
                 isActive: currentIndex == 3,
                 onTap: () => _onItemTapped(3),
               ),
@@ -332,7 +364,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: FloatingActionButton(
-          onPressed: () => _onItemTapped(2),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PostListingScreen(),
+              ),
+            );
+          },
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -417,8 +456,11 @@ class _ListingCardState extends State<ListingCard> {
                     ),
                   ),
                   child: const Center(
-                    child: Icon(Icons.chair_alt_outlined,
-                        color: _kMutedText, size: 34),
+                    child: Icon(
+                      Icons.chair_alt_outlined,
+                      color: _kMutedText,
+                      size: 34,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -443,7 +485,9 @@ class _ListingCardState extends State<ListingCard> {
                     bottom: 0,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: const BoxDecoration(
                         color: _kMaroon,
                         borderRadius: BorderRadius.only(
@@ -453,7 +497,9 @@ class _ListingCardState extends State<ListingCard> {
                       child: Text(
                         tag,
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 10),
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ),
@@ -486,7 +532,9 @@ class _ListingCardState extends State<ListingCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: _kMutedText, fontSize: 11),
+                          color: _kMutedText,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ],
@@ -507,8 +555,7 @@ class _ListingCardState extends State<ListingCard> {
                     const SizedBox(width: 3),
                     Text(
                       widget.data['period'] ?? '',
-                      style: const TextStyle(
-                          color: _kMutedText, fontSize: 10),
+                      style: const TextStyle(color: _kMutedText, fontSize: 10),
                     ),
                   ],
                 ),

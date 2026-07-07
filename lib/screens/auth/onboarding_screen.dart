@@ -14,8 +14,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<Map<String, dynamic>> pages = [
     {
-      "image":
-          "assets/images/ONBOARDING/ChatGPT Image Jul 4, 2026, 12_56_06 PM.png",
+      "image": "assets/images/ONBOARDING/chatgpt_onboarding.png",
       "title": "Find Your\nPerfect Roommate",
       "subtitle": "Discover verified profiles\nthat match your lifestyle.",
       "isArch": true,
@@ -101,99 +100,85 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 itemBuilder: (context, index) {
                   final page = pages[index];
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 90, 24, 90),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 15),
-                          // Title
-                          Text(
-                            page["title"],
-                            style: const TextStyle(
-                              fontFamily: 'serif',
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD4AF37),
-                              height: 1.25,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 36,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 15),
+                        // Title
+                        Text(
+                          page["title"],
+                          style: const TextStyle(
+                            fontFamily: 'serif',
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFD4AF37),
+                            height: 1.25,
+                          ),
+                        ),
+                        // Underline divider
+                        Container(
+                          margin: const EdgeInsets.only(top: 8, bottom: 16),
+                          width: 40,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        // Subtitle
+                        Text(
+                          page["subtitle"],
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withOpacity(0.7),
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Expanded(
+                          child: Center(
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                maxWidth: 320,
+                                maxHeight: 340,
+                              ),
+                              decoration: page["isArch"] == true
+                                  ? BoxDecoration(
+                                      border: Border.all(
+                                        color: const Color(
+                                          0xFFD4AF37,
+                                        ).withOpacity(0.8),
+                                        width: 2,
+                                      ),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(160),
+                                        topRight: Radius.circular(160),
+                                      ),
+                                    )
+                                  : null,
+                              child: ClipRRect(
+                                borderRadius: page["isArch"] == true
+                                    ? const BorderRadius.only(
+                                        topLeft: Radius.circular(158),
+                                        topRight: Radius.circular(158),
+                                      )
+                                    : BorderRadius.circular(20),
+                                child: Image.asset(
+                                  page["image"],
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                             ),
                           ),
-                          // Underline divider
-                          Container(
-                            margin: const EdgeInsets.only(top: 8, bottom: 16),
-                            width: 40,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD4AF37),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          // Subtitle
-                          Text(
-                            page["subtitle"],
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.7),
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          // Image or Icon
-                          Center(
-                            child: index == 2
-                                ? Image.asset(
-                                    'assets/icons/appicon.png',
-                                    height: 200,
-                                    width: 200,
-                                    fit: BoxFit.contain,
-                                  )
-                                : (page["isArch"]
-                                      ? Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: const Color(
-                                                0xFFD4AF37,
-                                              ).withOpacity(0.8),
-                                              width: 2,
-                                            ),
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                  topLeft: Radius.circular(160),
-                                                  topRight: Radius.circular(
-                                                    160,
-                                                  ),
-                                                ),
-                                          ),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                  topLeft: Radius.circular(158),
-                                                  topRight: Radius.circular(
-                                                    158,
-                                                  ),
-                                                ),
-                                            child: Image.asset(
-                                              page["image"],
-                                              height: 260,
-                                              width: 190,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        )
-                                      : ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          child: Image.asset(
-                                            page["image"],
-                                            height: 250,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        )),
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
                     ),
                   );
                 },
