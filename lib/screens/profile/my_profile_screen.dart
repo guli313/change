@@ -68,6 +68,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
 
     final metadata = _currentUser!.userMetadata ?? {};
+    final gender = metadata['gender'] as String?;
+    final preferredRoommate = metadata['preferred_roommate'] as String?;
+
+    final normalizedGender = ['Male', 'Female', 'Other'].contains(gender)
+        ? gender!
+        : 'Male';
+    final normalizedPreferredRoommate =
+        ['Male', 'Female', 'Male / Female'].contains(preferredRoommate)
+        ? preferredRoommate!
+        : 'Male / Female';
+
     return {
       'name':
           metadata['full_name'] ??
@@ -75,10 +86,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ? _currentUser!.email!.split('@')[0]
               : 'User'),
       'phone': metadata['phone_number'] ?? '+92 300 1234567',
-      'gender': metadata['gender'] ?? 'Not specified',
+      'gender': normalizedGender,
       'age': metadata['age'] ?? 'Not specified',
       'profession': metadata['profession'] ?? 'Not specified',
-      'preferredRoommate': metadata['preferred_roommate'] ?? 'Male / Female',
+      'preferredRoommate': normalizedPreferredRoommate,
       'maxBudget': metadata['max_budget'] ?? 'Rs. 20,000 / Month',
       'preferredLocation':
           metadata['preferred_location'] ?? 'Islamabad, Pakistan',

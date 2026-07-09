@@ -16,6 +16,7 @@ dependencies:
   image_picker: ^1.1.2
   path_provider: ^2.1.5
   shared_preferences: ^2.1.2
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +30,3 @@ flutter:
     - assets/icons/appicon.png
     - assets/images/splash_bg.png
     - assets/images/ONBOARDING/
-
-
-

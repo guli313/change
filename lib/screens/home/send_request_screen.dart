@@ -4,6 +4,7 @@ const Color _kBackground = Color(0xFF0D0D0D);
 const Color _kSurface = Color(0xFF1A1717);
 const Color _kGold = Color(0xFFCBA35C);
 const Color _kMutedText = Color(0xFF9B9B9B);
+const Color _kBorder = Color(0xFF2A2626);
 
 class SendRequestScreen extends StatefulWidget {
   const SendRequestScreen({super.key});
@@ -44,6 +45,8 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
         title: const Text('Send Request'),
         centerTitle: true,
         backgroundColor: _kSurface,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -52,12 +55,8 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
           child: ListView(
             children: [
               const Text(
-                'Send a request to roommates who match your needs. Fill in the details and submit. ',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                'Send a request to roommates who match your needs. Fill in the details and submit.',
+                style: TextStyle(color: _kMutedText, fontSize: 14, height: 1.5),
               ),
               const SizedBox(height: 24),
               TextFormField(
@@ -65,12 +64,16 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Your Name',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: _kMutedText),
                   filled: true,
                   fillColor: _kSurface,
-                  border: OutlineInputBorder(
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: _kBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: _kGold, width: 1.2),
                   ),
                 ),
                 validator: (value) {
@@ -86,12 +89,16 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                 dropdownColor: _kSurface,
                 decoration: InputDecoration(
                   labelText: 'Preferred Roommate Gender',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: _kMutedText),
                   filled: true,
                   fillColor: _kSurface,
-                  border: OutlineInputBorder(
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: _kBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: _kGold, width: 1.2),
                   ),
                 ),
                 items: const [
@@ -112,12 +119,16 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Budget',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: _kMutedText),
                   filled: true,
                   fillColor: _kSurface,
-                  border: OutlineInputBorder(
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: _kBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: _kGold, width: 1.2),
                   ),
                 ),
                 validator: (value) {
@@ -134,13 +145,17 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   labelText: 'Request Details',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: _kMutedText),
                   alignLabelWithHint: true,
                   filled: true,
                   fillColor: _kSurface,
-                  border: OutlineInputBorder(
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: _kBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: _kGold, width: 1.2),
                   ),
                 ),
                 validator: (value) {
@@ -157,7 +172,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                   onPressed: _submitRequest,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _kGold,
-                    foregroundColor: Colors.black,
+                    foregroundColor: _kSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),

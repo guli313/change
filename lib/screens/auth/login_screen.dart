@@ -118,7 +118,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _socialButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _socialButton({
+    required String imagePath,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(30),
@@ -130,7 +133,10 @@ class _LoginScreenState extends State<LoginScreen> {
           color: _kFieldFill,
           border: Border.all(color: const Color(0xFF2A2626)),
         ),
-        child: Icon(icon, color: _kGoldLight, size: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Image.asset(imagePath, fit: BoxFit.contain),
+        ),
       ),
     );
   }
@@ -321,17 +327,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _socialButton(
-                      icon: Icons.g_mobiledata,
+                      imagePath: 'assets/icons/google.png',
                       onTap: () => _showComingSoon('Google'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
-                      icon: Icons.apple,
+                      imagePath: 'assets/icons/apple.png',
                       onTap: () => _showComingSoon('Apple'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
-                      icon: Icons.sms_outlined,
+                      imagePath: 'assets/icons/pphone.png',
                       onTap: () => _showComingSoon('Phone'),
                     ),
                   ],

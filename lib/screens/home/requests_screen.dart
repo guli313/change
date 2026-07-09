@@ -3,7 +3,9 @@ import 'send_request_screen.dart';
 
 const Color _kBackground = Color(0xFF0D0D0D);
 const Color _kSurface = Color(0xFF1A1717);
+const Color _kCardBg = Color(0xFF1C1919);
 const Color _kGold = Color(0xFFCBA35C);
+const Color _kGoldLight = Color(0xFFE4C98A);
 const Color _kMutedText = Color(0xFF9B9B9B);
 const Color _kBorder = Color(0xFF2A2626);
 
@@ -31,6 +33,8 @@ class RequestsScreen extends StatelessWidget {
         title: const Text('Requests'),
         centerTitle: true,
         backgroundColor: _kSurface,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -43,11 +47,7 @@ class RequestsScreen extends StatelessWidget {
             ),
             child: const Text(
               'Your roommate requests are shown here. Tap a request to view details or send a new request.',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: TextStyle(color: _kMutedText, fontSize: 14, height: 1.5),
             ),
           ),
           Expanded(
@@ -60,7 +60,7 @@ class RequestsScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF252323),
+                    color: _kCardBg,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: _kBorder),
                   ),
@@ -82,7 +82,7 @@ class RequestsScreen extends StatelessWidget {
                             request['status']!,
                             style: TextStyle(
                               color: request['status'] == 'Sent request'
-                                  ? _kGold
+                                  ? _kGoldLight
                                   : Colors.lightGreenAccent,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -106,7 +106,7 @@ class RequestsScreen extends StatelessWidget {
                             child: OutlinedButton(
                               onPressed: () {},
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
+                                foregroundColor: _kGold,
                                 side: const BorderSide(color: _kGold),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -129,7 +129,7 @@ class RequestsScreen extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _kGold,
-                                foregroundColor: Colors.black,
+                                foregroundColor: _kSurface,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
