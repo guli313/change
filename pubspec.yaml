@@ -27,6 +27,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/icons/appicon.png
+    - assets/icons/
     - assets/images/splash_bg.png
     - assets/images/ONBOARDING/

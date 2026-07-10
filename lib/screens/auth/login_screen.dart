@@ -332,12 +332,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
-                      imagePath: 'assets/icons/apple.png',
+                      imagePath: 'assets/icons/apple2.png',
                       onTap: () => _showComingSoon('Apple'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
-                      imagePath: 'assets/icons/pphone.png',
+                      imagePath: 'assets/icons/phone2.png',
                       onTap: () => _showComingSoon('Phone'),
                     ),
                   ],

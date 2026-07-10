@@ -269,14 +269,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       await _supabase.storage
           .from('profile_images')
           .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(
-              cacheControl: '3600',
-              upsert: true,
-              contentType: _ImageSecurity.contentTypeFor(ext),
-            ),
-          );
+        path,
+        bytes,
+        fileOptions: FileOptions(
+          cacheControl: '3600',
+          upsert: true,
+          contentType: _ImageSecurity.contentTypeFor(ext),
+        ),
+      );
 
       final url = _supabase.storage.from('profile_images').getPublicUrl(path);
       // Cache-busting query so the previous photo isn't shown from cache.
@@ -364,9 +364,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         onCamera: kIsWeb
             ? null
             : () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
+          Navigator.pop(context);
+          _pickImage(ImageSource.camera);
+        },
       ),
     );
   }
@@ -441,7 +441,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                 controller: _nameCtrl,
                 decoration: _dec('Full Name', Icons.person_outline_rounded),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
               ),
               const SizedBox(height: 12),
 
@@ -554,14 +554,38 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       ),
       onPressed: () => Navigator.pop(context),
     ),
-    title: Text(
-      'Edit Profile',
-      style: GoogleFonts.urbanist(
-        color: AppColors.gold,
-        fontWeight: FontWeight.w700,
-        fontSize: 19,
-        letterSpacing: 0.4,
-      ),
+    // ── Title row now carries the same brand mark used on the login
+    // screen, next to the "Edit Profile" text, so the header reads as
+    // part of the same app rather than a generic settings page.
+    title: Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Swap this Image.asset for your actual login-screen logo file,
+        // e.g. Image.asset('assets/images/logo.png', height: 18,
+        // color: AppColors.gold). Falls back to a simple gold glyph if
+        // the asset is missing so the header never breaks.
+        Image.asset(
+          'assets/images/logo.png',
+          height: 18,
+          color: AppColors.gold,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.auto_awesome_rounded,
+            color: AppColors.gold,
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: 7),
+        Text(
+          'Edit Profile',
+          style: GoogleFonts.urbanist(
+            color: AppColors.gold,
+            fontWeight: FontWeight.w700,
+            fontSize: 19,
+            letterSpacing: 0.4,
+          ),
+        ),
+      ],
     ),
     centerTitle: true,
     actions: [
@@ -569,34 +593,34 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         padding: const EdgeInsets.only(right: 14),
         child: _isSaving
             ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.gold,
-                ),
-              )
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.gold,
+          ),
+        )
             : GestureDetector(
-                onTap: _saveProfile,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.maroon,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'save',
-                    style: GoogleFonts.urbanist(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
+          onTap: _saveProfile,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 7,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.maroon,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'save',
+              style: GoogleFonts.urbanist(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
+            ),
+          ),
+        ),
       ),
     ],
   );
@@ -656,10 +680,10 @@ class _AvatarCard extends StatelessWidget {
                     ),
                     child: avatar == null
                         ? const Icon(
-                            Icons.person_rounded,
-                            color: AppColors.goldDim,
-                            size: 54,
-                          )
+                      Icons.person_rounded,
+                      color: AppColors.goldDim,
+                      size: 54,
+                    )
                         : null,
                   ),
                 ),
@@ -815,10 +839,10 @@ class _Dropdown extends StatelessWidget {
       items: items
           .map(
             (g) => DropdownMenuItem(
-              value: g,
-              child: Text(g, style: GoogleFonts.urbanist(color: Colors.white)),
-            ),
-          )
+          value: g,
+          child: Text(g, style: GoogleFonts.urbanist(color: Colors.white)),
+        ),
+      )
           .toList(),
       onChanged: onChanged,
     );
@@ -852,14 +876,14 @@ class _SaveButton extends StatelessWidget {
             gradient: LinearGradient(
               colors: isSaving
                   ? [
-                      AppColors.maroon.withOpacity(0.5),
-                      AppColors.maroon.withOpacity(0.3),
-                    ]
+                AppColors.maroon.withOpacity(0.5),
+                AppColors.maroon.withOpacity(0.3),
+              ]
                   : [
-                      AppColors.maroonLight,
-                      AppColors.maroon,
-                      const Color(0xFF5A1028),
-                    ],
+                AppColors.maroonLight,
+                AppColors.maroon,
+                const Color(0xFF5A1028),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -867,33 +891,33 @@ class _SaveButton extends StatelessWidget {
             boxShadow: isSaving
                 ? []
                 : [
-                    BoxShadow(
-                      color: AppColors.maroon.withOpacity(0.45),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+              BoxShadow(
+                color: AppColors.maroon.withOpacity(0.45),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Container(
             alignment: Alignment.center,
             child: isSaving
                 ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
-                  )
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white,
+              ),
+            )
                 : Text(
-                    'Save Profile',
-                    style: GoogleFonts.urbanist(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+              'Save Profile',
+              style: GoogleFonts.urbanist(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
           ),
         ),
       ),
