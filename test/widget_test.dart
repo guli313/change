@@ -11,23 +11,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:roommate_finder/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Splash screen shows roommate finder texts', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp(
       hasLoggedInBefore: false,
       hasActiveSession: false,
     ));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that our splash screen text is shown.
+    expect(find.text('ROOMMATE'), findsOneWidget);
+    expect(find.text('FINDER'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Settle the navigation timer so the test can exit cleanly.
+    await tester.pumpAndSettle(const Duration(seconds: 3));
   });
 }

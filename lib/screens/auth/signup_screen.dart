@@ -83,9 +83,15 @@ class _SignupScreenState extends State<SignupScreen> {
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } catch (e) {
-      final message = e is AuthException
-          ? e.message
-          : 'Signup failed. Please try again.';
+      debugPrint('Signup error details: $e');
+      String message = 'Signup failed. Please try again.';
+      if (e is AuthException) {
+        message = e.message;
+      } else if (e is StateError && e.message.contains('initialized')) {
+        message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
+      } else {
+        message = e.toString();
+      }
       _showError(message);
     } finally {
       if (mounted) {

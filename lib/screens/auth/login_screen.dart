@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -60,9 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       _showError('Unable to login. Please check your credentials.');
     } catch (e) {
-      final message = e is AuthException
-          ? e.message
-          : 'Login failed. Please try again.';
+      debugPrint('Login error details: $e');
+      String message = 'Login failed. Please try again.';
+      if (e is AuthException) {
+        message = e.message;
+      } else if (e is StateError && e.message.contains('initialized')) {
+        message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
+      } else {
+        message = e.toString();
+      }
       _showError(message);
     } finally {
       if (mounted) {
@@ -72,17 +79,108 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: _kFieldFill),
     );
   }
 
-  void _showComingSoon(String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$provider login coming soon'),
-        backgroundColor: _kFieldFill,
-      ),
+  Future<void> _handleSocialLogin(String provider) async {
+    setState(() => _isLoading = true);
+
+    try {
+      if (provider == 'Google') {
+        await Supabase.instance.client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: kIsWeb ? null : 'roommate-finder://login-callback',
+          scopes: 'email profile',
+        );
+      } else if (provider == 'Apple') {
+        await Supabase.instance.client.auth.signInWithOAuth(
+          OAuthProvider.apple,
+          redirectTo: kIsWeb ? null : 'roommate-finder://login-callback',
+        );
+      } else if (provider == 'Phone') {
+        final phone = await _promptForPhoneNumber();
+        if (phone == null || phone.isEmpty) return;
+
+        await Supabase.instance.client.auth.signInWithOtp(phone: phone);
+      }
+
+      if (!mounted) return;
+
+      if (Supabase.instance.client.auth.currentSession != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_logged_in', true);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint('Social login error details: $e');
+      String message = 'Unable to start $provider login right now.';
+      if (e is AuthException) {
+        message = e.message;
+      } else if (e is StateError && e.message.contains('initialized')) {
+        message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
+      } else {
+        message = e.toString();
+      }
+      _showError(message);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<String?> _promptForPhoneNumber() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: _kFieldFill,
+          title: const Text(
+            'Phone login',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'Enter phone number',
+              hintStyle: TextStyle(color: _kMutedText),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: _kGold),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: _kGold),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: _kGold)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: _kGold),
+              onPressed: () {
+                Navigator.pop(context, controller.text.trim());
+              },
+              child: const Text(
+                'Send OTP',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -328,17 +426,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     _socialButton(
                       imagePath: 'assets/icons/google.png',
-                      onTap: () => _showComingSoon('Google'),
+                      onTap: () => _handleSocialLogin('Google'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
                       imagePath: 'assets/icons/apple2.png',
-                      onTap: () => _showComingSoon('Apple'),
+                      onTap: () => _handleSocialLogin('Apple'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
                       imagePath: 'assets/icons/phone2.png',
-                      onTap: () => _showComingSoon('Phone'),
+                      onTap: () => _handleSocialLogin('Phone'),
                     ),
                   ],
                 ),

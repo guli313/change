@@ -5,23 +5,50 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:roommate_finder/screens/auth/login_screen.dart';
 import 'package:roommate_finder/screens/auth/splash_screen.dart';
 import 'package:roommate_finder/screens/home/home_screen.dart';
+import 'package:roommate_finder/utils/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'https://qrtqvreqwbbdbaunjvvz.supabase.co',
-    anonKey:
-    'YOUR_SUPABASE_ANON_KEY',
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
   );
 
-  final prefs = await SharedPreferences.getInstance();
+  bool isSupabaseConfigured = false;
+  if (!SupabaseConfig.isConfigured(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  )) {
+    debugPrint(
+      'Supabase is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
+    );
+  } else {
+    try {
+      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+      isSupabaseConfigured = true;
+    } catch (e) {
+      debugPrint('Failed to initialize Supabase: $e');
+    }
+  }
 
-  final bool hasLoggedInBefore =
-      prefs.getBool('has_logged_in') ?? false;
+  bool hasLoggedInBefore = false;
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    hasLoggedInBefore = prefs.getBool('has_logged_in') ?? false;
+  } catch (e) {
+    debugPrint('Failed to initialize SharedPreferences: $e');
+  }
 
-  final bool hasActiveSession =
-      Supabase.instance.client.auth.currentSession != null;
+  bool hasActiveSession = false;
+  if (isSupabaseConfigured) {
+    try {
+      hasActiveSession = Supabase.instance.client.auth.currentSession != null;
+    } catch (e) {
+      debugPrint('Failed to check active session: $e');
+    }
+  }
 
   runApp(
     MyApp(
