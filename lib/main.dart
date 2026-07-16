@@ -10,10 +10,13 @@ import 'package:roommate_finder/utils/supabase_config.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  const supabaseUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://qrtqvreqwbbdbaunjvvz.supabase.co',
+  );
   const supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFydHF2cmVxd2JiZGJhdW5qdnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTQxNDAsImV4cCI6MjA5NzY5MDE0MH0.kB6c3-iA0KcRBBgc6mxWkVjjogveQGmuUo4z_p1qQEs',
   );
 
   bool isSupabaseConfigured = false;
@@ -26,7 +29,7 @@ Future<void> main() async {
     );
   } else {
     try {
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+      await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey);
       isSupabaseConfigured = true;
     } catch (e) {
       debugPrint('Failed to initialize Supabase: $e');

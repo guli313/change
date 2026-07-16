@@ -29,8 +29,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
   String _searchQuery = '';
+  String _selectedFilter = 'All';
   FilterCriteria _activeFilter = const FilterCriteria();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   final List<String> _filters = const [
     'All',
@@ -80,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Home
         break;
       case 1:
-        // TODO: hook up to a dedicated search screen if you add one
+        _searchFocusNode.requestFocus();
         break;
       case 2:
         Navigator.push(
@@ -108,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -116,28 +119,48 @@ class _HomeScreenState extends State<HomeScreen> {
       final title = listing['title']?.toLowerCase() ?? '';
       final city = listing['city']?.toLowerCase() ?? '';
       final tag = listing['tag']?.toLowerCase() ?? '';
+      
       final matchesSearch =
           _searchQuery.isEmpty ||
           title.contains(_searchQuery) ||
           city.contains(_searchQuery) ||
           tag.contains(_searchQuery);
+          
       final matchesLocation =
           _activeFilter.location.isEmpty ||
           city.contains(_activeFilter.location.toLowerCase());
-      final matchesBudget =
-          _activeFilter.budget.isEmpty ||
-          listing['rent']?.toLowerCase().contains(
-                _activeFilter.budget.toLowerCase(),
-              ) ==
-              true;
+
+      int? parseNumber(String s) {
+        final clean = s.replaceAll(RegExp(r'[^0-9]'), '');
+        return int.tryParse(clean);
+      }
+      final listingRent = parseNumber(listing['rent'] ?? '');
+      final filterBudget = parseNumber(_activeFilter.budget);
+      final matchesBudget = filterBudget == null ||
+          listingRent == null ||
+          listingRent <= filterBudget;
+
       final matchesReligion =
           _activeFilter.religion.isEmpty ||
           tag.contains(_activeFilter.religion.toLowerCase());
 
+      bool matchesChip = true;
+      if (_selectedFilter != 'All') {
+        if (_selectedFilter == 'Female') {
+          matchesChip = tag.contains('female');
+        } else if (_selectedFilter == 'Male') {
+          matchesChip = tag.contains('male');
+        } else {
+          matchesChip = title.toLowerCase().contains(_selectedFilter.toLowerCase()) ||
+              tag.contains(_selectedFilter.toLowerCase());
+        }
+      }
+
       return matchesSearch &&
           matchesLocation &&
           matchesBudget &&
-          matchesReligion;
+          matchesReligion &&
+          matchesChip;
     }).toList();
   }
 
@@ -211,7 +234,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
+                        focusNode: _searchFocusNode,
                         style: const TextStyle(color: Colors.white),
+                        textInputAction: TextInputAction.search,
                         decoration: const InputDecoration(
                           hintText: 'Search city, area or keyword...',
                           hintStyle: TextStyle(
@@ -227,8 +252,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             _searchQuery = value.trim().toLowerCase();
                           });
                         },
+                        onSubmitted: (_) {
+                          _searchFocusNode.unfocus();
+                        },
                       ),
                     ),
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear, color: _kGold, size: 20),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      ),
                     IconButton(
                       icon: const Icon(
                         Icons.favorite_border,
@@ -257,7 +295,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+            // HORIZONTAL FILTERS LIST
+            SizedBox(
+              height: 38,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _filters.length,
+                itemBuilder: (context, index) {
+                  final filter = _filters[index];
+                  final isSelected = filter == _selectedFilter;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ChoiceChip(
+                      label: Text(
+                        filter,
+                        style: TextStyle(
+                          color: isSelected ? _kBackground : Colors.white70,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: _kGold,
+                      backgroundColor: _kSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(color: isSelected ? _kGold : _kBorder),
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _selectedFilter = filter;
+                          });
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 14),
 
             // SECTION HEADER
             Padding(

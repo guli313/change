@@ -87,7 +87,9 @@ class _SignupScreenState extends State<SignupScreen> {
       String message = 'Signup failed. Please try again.';
       if (e is AuthException) {
         message = e.message;
-      } else if (e is StateError && e.message.contains('initialized')) {
+      } else if ((e is StateError && e.message.contains('initialized')) ||
+          (e is AssertionError && e.toString().contains('initialize')) ||
+          e.toString().contains('initialize')) {
         message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
       } else {
         message = e.toString();

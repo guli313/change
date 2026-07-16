@@ -65,8 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
       String message = 'Login failed. Please try again.';
       if (e is AuthException) {
         message = e.message;
-      } else if (e is StateError && e.message.contains('initialized')) {
-        message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
+      } else if ((e is StateError && e.message.contains('initialized')) ||
+          (e is AssertionError && e.toString().contains('initialize')) ||
+          e.toString().contains('initialize')) {
+        message =
+            'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
       } else {
         message = e.toString();
       }
@@ -124,8 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
       String message = 'Unable to start $provider login right now.';
       if (e is AuthException) {
         message = e.message;
-      } else if (e is StateError && e.message.contains('initialized')) {
-        message = 'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
+      } else if ((e is StateError && e.message.contains('initialized')) ||
+          (e is AssertionError && e.toString().contains('initialize')) ||
+          e.toString().contains('initialize')) {
+        message =
+            'Supabase is not initialized. Please verify SUPABASE_URL and SUPABASE_ANON_KEY config.';
       } else {
         message = e.toString();
       }
@@ -212,29 +218,6 @@ class _LoginScreenState extends State<LoginScreen> {
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: Colors.redAccent),
-      ),
-    );
-  }
-
-  Widget _socialButton({
-    required String imagePath,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _kFieldFill,
-          border: Border.all(color: const Color(0xFF2A2626)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Image.asset(imagePath, fit: BoxFit.contain),
-        ),
       ),
     );
   }
@@ -404,41 +387,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 28),
-
-                Row(
-                  children: const [
-                    Expanded(child: Divider(color: Color(0xFF2A2626))),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'or continue with',
-                        style: TextStyle(color: _kMutedText, fontSize: 13),
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HomeScreen(),
+                              ),
+                            );
+                          },
+                    child: const Text(
+                      'Skip for now',
+                      style: TextStyle(
+                        color: _kGold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Expanded(child: Divider(color: Color(0xFF2A2626))),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _socialButton(
-                      imagePath: 'assets/icons/google.png',
-                      onTap: () => _handleSocialLogin('Google'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    const SizedBox(width: 20),
-                    _socialButton(
-                      imagePath: 'assets/icons/apple2.png',
-                      onTap: () => _handleSocialLogin('Apple'),
-                    ),
-                    const SizedBox(width: 20),
-                    _socialButton(
-                      imagePath: 'assets/icons/phone2.png',
-                      onTap: () => _handleSocialLogin('Phone'),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 28),
 

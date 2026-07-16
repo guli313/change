@@ -42,11 +42,17 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
     return Scaffold(
       backgroundColor: _kBackground,
       appBar: AppBar(
-        title: const Text('Send Request'),
-        centerTitle: true,
-        backgroundColor: _kSurface,
-        foregroundColor: Colors.white,
+        backgroundColor: _kBackground,
         elevation: 0,
+        title: const Text(
+          'Send Request',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -102,9 +108,9 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                   ),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'Female', child: Text('Female')),
-                  DropdownMenuItem(value: 'Male', child: Text('Male')),
-                  DropdownMenuItem(value: 'Any', child: Text('Any')),
+                  DropdownMenuItem(value: 'Female', child: Text('Female', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'Male', child: Text('Male', style: TextStyle(color: Colors.white))),
+                  DropdownMenuItem(value: 'Any', child: Text('Any', style: TextStyle(color: Colors.white))),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -172,7 +178,7 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
                   onPressed: _submitRequest,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _kGold,
-                    foregroundColor: _kSurface,
+                    foregroundColor: _kBackground,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),

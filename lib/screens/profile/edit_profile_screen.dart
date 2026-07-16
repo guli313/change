@@ -322,6 +322,16 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
       if (!widget.isGuest) {
         await _supabase.auth.updateUser(UserAttributes(data: data));
+        try {
+          await _supabase.from('profiles').upsert({
+            'id': _supabase.auth.currentUser!.id,
+            'full_name': _nameCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'avatar_url': imageUrl ?? '',
+          });
+        } catch (dbError) {
+          debugPrint('Failed to update profiles table: $dbError');
+        }
       }
 
       if (mounted) Navigator.pop(context, data);

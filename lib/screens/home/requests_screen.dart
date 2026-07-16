@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'send_request_screen.dart';
 
 const Color _kBackground = Color(0xFF0D0D0D);
-const Color _kSurface = Color(0xFF1A1717);
 const Color _kCardBg = Color(0xFF1C1919);
 const Color _kGold = Color(0xFFCBA35C);
 const Color _kGoldLight = Color(0xFFE4C98A);
-const Color _kMutedText = Color(0xFF9B9B9B);
+const Color _kMaroonStart = Color(0xFF7A1F35);
+const Color _kMaroonEnd = Color(0xFF4E1220);
 const Color _kBorder = Color(0xFF2A2626);
 
 class RequestsScreen extends StatelessWidget {
@@ -30,11 +30,17 @@ class RequestsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _kBackground,
       appBar: AppBar(
-        title: const Text('Requests'),
-        centerTitle: true,
-        backgroundColor: _kSurface,
-        foregroundColor: Colors.white,
+        backgroundColor: _kBackground,
         elevation: 0,
+        title: const Text(
+          'Requests',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -42,12 +48,19 @@ class RequestsScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: const BoxDecoration(
-              color: _kSurface,
-              border: Border(bottom: BorderSide(color: _kBorder)),
+              gradient: LinearGradient(
+                colors: [_kMaroonStart, _kMaroonEnd],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
             ),
             child: const Text(
               'Your roommate requests are shown here. Tap a request to view details or send a new request.',
-              style: TextStyle(color: _kMutedText, fontSize: 14, height: 1.5),
+              style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
             ),
           ),
           Expanded(
@@ -83,7 +96,7 @@ class RequestsScreen extends StatelessWidget {
                             style: TextStyle(
                               color: request['status'] == 'Sent request'
                                   ? _kGoldLight
-                                  : Colors.lightGreenAccent,
+                                  : const Color(0xFF81C784),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -106,8 +119,8 @@ class RequestsScreen extends StatelessWidget {
                             child: OutlinedButton(
                               onPressed: () {},
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: _kGold,
-                                side: const BorderSide(color: _kGold),
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: _kBorder),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -129,7 +142,7 @@ class RequestsScreen extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _kGold,
-                                foregroundColor: _kSurface,
+                                foregroundColor: _kBackground,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
