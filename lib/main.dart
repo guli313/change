@@ -18,6 +18,9 @@ Future<void> main() async {
     'SUPABASE_ANON_KEY',
     defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFydHF2cmVxd2JiZGJhdW5qdnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTQxNDAsImV4cCI6MjA5NzY5MDE0MH0.kB6c3-iA0KcRBBgc6mxWkVjjogveQGmuUo4z_p1qQEs',
   );
+  //supabase is integrated
+  //new features are added
+
 
   bool isSupabaseConfigured = false;
   if (!SupabaseConfig.isConfigured(
