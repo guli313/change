@@ -37,7 +37,10 @@ Future<void> main() async {
     } catch (e) {
       debugPrint('Failed to initialize Supabase: $e');
     }
-  }
+  }//mfedf
+  //ddsd
+  //kkk
+  //eofoepf
 
   bool hasLoggedInBefore = false;
   try {
