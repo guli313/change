@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 // ---- Theme ----
 const Color _kBg = Color(0xFF0D0D0D);
@@ -13,63 +13,65 @@ const Color _kBorder = Color(0xFF2A2626);
 // ---- Worldwide Student Locations ----
 const List<Map<String, String>> _kWorldLocations = [
   // Pakistan
-  {'city': 'Lahore',      'area': 'DHA / Johar Town',         'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Islamabad',   'area': 'F-7 / F-8 / Blue Area',    'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Karachi',     'area': 'DHA / Gulshan / Clifton',  'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Peshawar',    'area': 'Hayatabad / University Rd','country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Faisalabad',  'area': 'Peoples Colony / NFC',     'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Rawalpindi',  'area': 'Saddar / Bahria Town',     'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Multan',      'area': 'Gulgasht / Cantt',         'country': 'Pakistan',    'flag': '🇵🇰'},
-  {'city': 'Quetta',      'area': 'Satellite Town / Jinnah Rd','country': 'Pakistan',   'flag': '🇵🇰'},
+  {'city': 'Lahore',      'area': 'DHA / Johar Town',         'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Islamabad',   'area': 'F-7 / F-8 / Blue Area',    'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Karachi',     'area': 'DHA / Gulshan / Clifton',  'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Peshawar',    'area': 'Hayatabad / University Rd','country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Faisalabad',  'area': 'Peoples Colony / NFC',     'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Rawalpindi',  'area': 'Saddar / Bahria Town',     'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Multan',      'area': 'Gulgasht / Cantt',         'country': 'Pakistan',    'flag': 'ðŸ‡µðŸ‡°'},
+  {'city': 'Quetta',      'area': 'Satellite Town / Jinnah Rd','country': 'Pakistan',   'flag': 'ðŸ‡µðŸ‡°'},
   // UK
-  {'city': 'London',      'area': 'Stratford / Mile End / Bethnal Green','country': 'UK','flag': '🇬🇧'},
-  {'city': 'Manchester',  'area': 'Fallowfield / Withington / Rusholme','country': 'UK', 'flag': '🇬🇧'},
-  {'city': 'Birmingham',  'area': 'Selly Oak / Edgbaston',    'country': 'UK',          'flag': '🇬🇧'},
-  {'city': 'Leeds',       'area': 'Hyde Park / Headingley',   'country': 'UK',          'flag': '🇬🇧'},
-  {'city': 'Edinburgh',   'area': 'Marchmont / Newington',    'country': 'UK',          'flag': '🇬🇧'},
-  {'city': 'Sheffield',   'area': 'Crookes / Broomhill',      'country': 'UK',          'flag': '🇬🇧'},
-  {'city': 'Nottingham',  'area': 'Lenton / Beeston',         'country': 'UK',          'flag': '🇬🇧'},
+  {'city': 'London',      'area': 'Stratford / Mile End / Bethnal Green','country': 'UK','flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Manchester',  'area': 'Fallowfield / Withington / Rusholme','country': 'UK', 'flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Birmingham',  'area': 'Selly Oak / Edgbaston',    'country': 'UK',          'flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Leeds',       'area': 'Hyde Park / Headingley',   'country': 'UK',          'flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Edinburgh',   'area': 'Marchmont / Newington',    'country': 'UK',          'flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Sheffield',   'area': 'Crookes / Broomhill',      'country': 'UK',          'flag': 'ðŸ‡¬ðŸ‡§'},
+  {'city': 'Nottingham',  'area': 'Lenton / Beeston',         'country': 'UK',          'flag': 'ðŸ‡¬ðŸ‡§'},
   // USA
-  {'city': 'New York',    'area': 'Manhattan / Brooklyn / Queens','country': 'USA',      'flag': '🇺🇸'},
-  {'city': 'Los Angeles', 'area': 'Westwood / Koreatown / Culver City','country': 'USA', 'flag': '🇺🇸'},
-  {'city': 'Chicago',     'area': 'Hyde Park / Lincoln Park',  'country': 'USA',         'flag': '🇺🇸'},
-  {'city': 'Houston',     'area': 'University District / Midtown','country': 'USA',      'flag': '🇺🇸'},
-  {'city': 'Boston',      'area': 'Allston / Brighton / Fenway','country': 'USA',        'flag': '🇺🇸'},
-  {'city': 'San Francisco','area': 'Mission / SOMA / Castro',  'country': 'USA',         'flag': '🇺🇸'},
+  {'city': 'New York',    'area': 'Manhattan / Brooklyn / Queens','country': 'USA',      'flag': 'ðŸ‡ºðŸ‡¸'},
+  {'city': 'Los Angeles', 'area': 'Westwood / Koreatown / Culver City','country': 'USA', 'flag': 'ðŸ‡ºðŸ‡¸'},
+  {'city': 'Chicago',     'area': 'Hyde Park / Lincoln Park',  'country': 'USA',         'flag': 'ðŸ‡ºðŸ‡¸'},
+  {'city': 'Houston',     'area': 'University District / Midtown','country': 'USA',      'flag': 'ðŸ‡ºðŸ‡¸'},
+  {'city': 'Boston',      'area': 'Allston / Brighton / Fenway','country': 'USA',        'flag': 'ðŸ‡ºðŸ‡¸'},
+  {'city': 'San Francisco','area': 'Mission / SOMA / Castro',  'country': 'USA',         'flag': 'ðŸ‡ºðŸ‡¸'},
   // Canada
-  {'city': 'Toronto',     'area': 'Annex / Kensington / Scarborough','country': 'Canada','flag': '🇨🇦'},
-  {'city': 'Vancouver',   'area': 'UBC / Kitsilano / East Van','country': 'Canada',      'flag': '🇨🇦'},
-  {'city': 'Montreal',    'area': 'Plateau / McGill Ghetto',   'country': 'Canada',      'flag': '🇨🇦'},
-  {'city': 'Calgary',     'area': 'Brentwood / Varsity',       'country': 'Canada',      'flag': '🇨🇦'},
+  {'city': 'Toronto',     'area': 'Annex / Kensington / Scarborough','country': 'Canada','flag': 'ðŸ‡¨ðŸ‡¦'},
+  {'city': 'Vancouver',   'area': 'UBC / Kitsilano / East Van','country': 'Canada',      'flag': 'ðŸ‡¨ðŸ‡¦'},
+  {'city': 'Montreal',    'area': 'Plateau / McGill Ghetto',   'country': 'Canada',      'flag': 'ðŸ‡¨ðŸ‡¦'},
+  {'city': 'Calgary',     'area': 'Brentwood / Varsity',       'country': 'Canada',      'flag': 'ðŸ‡¨ðŸ‡¦'},
   // Australia
-  {'city': 'Melbourne',   'area': 'Carlton / Fitzroy / Brunswick','country': 'Australia','flag': '🇦🇺'},
-  {'city': 'Sydney',      'area': 'Ultimo / Newtown / Redfern','country': 'Australia',   'flag': '🇦🇺'},
-  {'city': 'Brisbane',    'area': 'West End / St Lucia',       'country': 'Australia',   'flag': '🇦🇺'},
-  {'city': 'Adelaide',    'area': 'Kensington / Goodwood',     'country': 'Australia',   'flag': '🇦🇺'},
+  {'city': 'Melbourne',   'area': 'Carlton / Fitzroy / Brunswick','country': 'Australia','flag': 'ðŸ‡¦ðŸ‡º'},
+  {'city': 'Sydney',      'area': 'Ultimo / Newtown / Redfern','country': 'Australia',   'flag': 'ðŸ‡¦ðŸ‡º'},
+  {'city': 'Brisbane',    'area': 'West End / St Lucia',       'country': 'Australia',   'flag': 'ðŸ‡¦ðŸ‡º'},
+  {'city': 'Adelaide',    'area': 'Kensington / Goodwood',     'country': 'Australia',   'flag': 'ðŸ‡¦ðŸ‡º'},
   // Middle East
-  {'city': 'Dubai',       'area': 'Al Barsha / Deira / JLT',  'country': 'UAE',         'flag': '🇦🇪'},
-  {'city': 'Abu Dhabi',   'area': 'Khalidiyah / Electra St',  'country': 'UAE',         'flag': '🇦🇪'},
-  {'city': 'Riyadh',      'area': 'Al Malqa / Olaya / Sulaimaniyah','country': 'Saudi Arabia','flag': '🇸🇦'},
-  {'city': 'Doha',        'area': 'Education City / Al Sadd',  'country': 'Qatar',       'flag': '🇶🇦'},
+  {'city': 'Dubai',       'area': 'Al Barsha / Deira / JLT',  'country': 'UAE',         'flag': 'ðŸ‡¦ðŸ‡ª'},
+  {'city': 'Abu Dhabi',   'area': 'Khalidiyah / Electra St',  'country': 'UAE',         'flag': 'ðŸ‡¦ðŸ‡ª'},
+  {'city': 'Riyadh',      'area': 'Al Malqa / Olaya / Sulaimaniyah','country': 'Saudi Arabia','flag': 'ðŸ‡¸ðŸ‡¦'},
+  {'city': 'Doha',        'area': 'Education City / Al Sadd',  'country': 'Qatar',       'flag': 'ðŸ‡¶ðŸ‡¦'},
   // Europe
-  {'city': 'Berlin',      'area': 'Mitte / Prenzlauer Berg / Neukölln','country': 'Germany','flag': '🇩🇪'},
-  {'city': 'Munich',      'area': 'Schwabing / Maxvorstadt',   'country': 'Germany',     'flag': '🇩🇪'},
-  {'city': 'Paris',       'area': 'Latin Quarter / Montmartre','country': 'France',      'flag': '🇫🇷'},
-  {'city': 'Amsterdam',   'area': 'De Pijp / Jordaan / Oud-West','country': 'Netherlands','flag': '🇳🇱'},
-  {'city': 'Barcelona',   'area': 'Gracia / Poblenou / El Clot','country': 'Spain',      'flag': '🇪🇸'},
-  {'city': 'Madrid',      'area': 'Malasaña / Lavapiés',       'country': 'Spain',       'flag': '🇪🇸'},
-  {'city': 'Dublin',      'area': 'Rathmines / Ranelagh',      'country': 'Ireland',     'flag': '🇮🇪'},
+  {'city': 'Berlin',      'area': 'Mitte / Prenzlauer Berg / NeukÃ¶lln','country': 'Germany','flag': 'ðŸ‡©ðŸ‡ª'},
+  {'city': 'Munich',      'area': 'Schwabing / Maxvorstadt',   'country': 'Germany',     'flag': 'ðŸ‡©ðŸ‡ª'},
+  {'city': 'Paris',       'area': 'Latin Quarter / Montmartre','country': 'France',      'flag': 'ðŸ‡«ðŸ‡·'},
+  {'city': 'Amsterdam',   'area': 'De Pijp / Jordaan / Oud-West','country': 'Netherlands','flag': 'ðŸ‡³ðŸ‡±'},
+  {'city': 'Barcelona',   'area': 'Gracia / Poblenou / El Clot','country': 'Spain',      'flag': 'ðŸ‡ªðŸ‡¸'},
+  {'city': 'Madrid',      'area': 'MalasaÃ±a / LavapiÃ©s',       'country': 'Spain',       'flag': 'ðŸ‡ªðŸ‡¸'},
+  {'city': 'Dublin',      'area': 'Rathmines / Ranelagh',      'country': 'Ireland',     'flag': 'ðŸ‡®ðŸ‡ª'},
 ];
 
 class FilterCriteria {
   final String location;
   final String budget;
   final String religion;
+  final double radiusKm; // 0 = no radius filter
 
   const FilterCriteria({
     this.location = '',
     this.budget = '',
     this.religion = '',
+    this.radiusKm = 0,
   });
 }
 
@@ -90,6 +92,7 @@ class _FilterScreenState extends State<FilterScreen> {
   String? _selectedCity;
   String _locationSearch = '';
   bool _showLocationPicker = false;
+  double _radiusKm = 0; // 0 = off
 
   @override
   void dispose() {
@@ -106,6 +109,7 @@ class _FilterScreenState extends State<FilterScreen> {
         location: _selectedCity ?? _locationController.text.trim(),
         budget: _budgetController.text.trim(),
         religion: _religionController.text.trim(),
+        radiusKm: _radiusKm,
       ),
     );
   }
@@ -119,6 +123,7 @@ class _FilterScreenState extends State<FilterScreen> {
       _selectedCity = null;
       _locationSearch = '';
       _showLocationPicker = false;
+      _radiusKm = 0;
     });
   }
 
@@ -177,14 +182,20 @@ class _FilterScreenState extends State<FilterScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ── Location Section ──
+                // â”€â”€ Location Section â”€â”€
                 _buildSectionLabel(Icons.public, 'Location'),
                 const SizedBox(height: 10),
                 _buildLocationButton(),
                 if (_showLocationPicker) _buildLocationPicker(),
                 const SizedBox(height: 20),
 
-                // ── Budget Section ──
+                // â”€â”€ Nearby Radius Section â”€â”€
+                _buildSectionLabel(Icons.radar, 'Nearby Radius'),
+                const SizedBox(height: 8),
+                _buildRadiusSlider(),
+                const SizedBox(height: 20),
+
+                // â”€â”€ Budget Section â”€â”€
                 _buildSectionLabel(Icons.payments_outlined, 'Budget (max)'),
                 const SizedBox(height: 10),
                 _buildTextField(
@@ -195,7 +206,7 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ── Preference Section ──
+                // â”€â”€ Preference Section â”€â”€
                 _buildSectionLabel(Icons.person_outline, 'Preference / Religion'),
                 const SizedBox(height: 10),
                 _buildTextField(
@@ -208,7 +219,7 @@ class _FilterScreenState extends State<FilterScreen> {
             ),
           ),
 
-          // ── Apply Button ──
+          // â”€â”€ Apply Button â”€â”€
           Container(
             decoration: const BoxDecoration(
               color: _kSurface,
@@ -289,7 +300,18 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  Widget _buildLocationButton() {
+  Widget _buildRadiusSlider() {
+    final isOff = _radiusKm <= 0;
+    return Container(
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isOff ? _kBorder : _kGold.withValues(alpha: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      child: Column(\r\n        children: [\r\n          Row(\r\n            mainAxisAlignment: MainAxisAlignment.spaceBetween,\r\n            children: [\r\n              Row(\r\n                children: [\r\n                  Icon(Icons.my_location, color: isOff ? _kMuted : _kGold, size: 16),\r\n                  const SizedBox(width: 8),\r\n                  Text(\r\n                    isOff ? 'No radius limit' : '${_radiusKm.toInt()} km aas paas',\r\n                    style: TextStyle(\r\n                      color: isOff ? _kMuted : Colors.white,\r\n                      fontSize: 13.5,\r\n                      fontWeight: isOff ? FontWeight.normal : FontWeight.w600,\r\n                    ),\r\n                  ),\r\n                ],\r\n              ),\r\n              if (!isOff)\r\n                GestureDetector(\r\n                  onTap: () => setState(() => _radiusKm = 0),\r\n                  child: const Icon(Icons.close, color: _kMuted, size: 16),\r\n                ),\r\n            ],\r\n          ),\r\n          SliderTheme(\r\n            data: SliderThemeData(\r\n              activeTrackColor: _kGold,\r\n              inactiveTrackColor: _kBorder,\r\n              thumbColor: _kGold,\r\n              overlayColor: _kGold.withValues(alpha: 0.15),\r\n              trackHeight: 3,\r\n              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),\r\n            ),\r\n            child: Slider(\r\n              min: 0,\r\n              max: 100,\r\n              divisions: 20,\r\n              value: _radiusKm,\r\n              onChanged: (v) => setState(() => _radiusKm = v),\r\n            ),\r\n          ),\r\n          Row(\r\n            mainAxisAlignment: MainAxisAlignment.spaceBetween,\r\n            children: const [\r\n              Text('Off', style: TextStyle(color: _kMuted, fontSize: 10)),\r\n              Text('100 km', style: TextStyle(color: _kMuted, fontSize: 10)),\r\n            ],\r\n          ),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n\r\n  Widget _buildLocationButton() {
     final hasSelection = _selectedCity != null && _selectedCity!.isNotEmpty;
     return GestureDetector(
       onTap: () => setState(() => _showLocationPicker = !_showLocationPicker),
@@ -475,3 +497,4 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 }
+

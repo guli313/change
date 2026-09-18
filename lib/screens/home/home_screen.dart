@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/favorites_service.dart';
 import '../../services/listings_service.dart';
+import '../../services/location_service.dart';
 import '../auth/login_screen.dart';
 import '../chat/chat_screen.dart';
 import '../listing/post_listing_screen.dart';
@@ -168,6 +169,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int _recentCount = 0;
   int _unreadChatCount = 2;
 
+  // Location
+  UserLocation? _userLocation;
+  bool _isLoadingLocation = false;
+  bool _locationDenied = false;
+  bool _sortByDistance = false;
+  List<Listing> _nearbyListings = [];
+  bool _isLoadingNearby = false;
+
   // Banner carousel
   final PageController _bannerController = PageController();
   int _currentBannerIndex = 0;
@@ -188,6 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserName();
     _loadListings();
     _startBannerTimer();
+    _loadLocation(); // GPS location start karo
   }
 
   @override
@@ -247,6 +257,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _recentCount = recent == 0 ? 3 : recent;
           _isLoading = false;
         });
+        // Listings load hone ke baad distance calculate karo
+        if (_userLocation != null) {
+          _computeDistances();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -258,6 +272,67 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // ---- LOCATION ----
+  Future<void> _loadLocation() async {
+    setState(() => _isLoadingLocation = true);
+    final loc = await LocationService.getCurrentLocation();
+    if (mounted) {
+      setState(() {
+        _userLocation = loc;
+        _isLoadingLocation = false;
+        _locationDenied = loc == null;
+      });
+      if (loc != null && !_isLoading) {
+        _computeDistances();
+      }
+    }
+  }
+
+  /// Har listing ke liye city geocode karke distance calculate karo
+  Future<void> _computeDistances() async {
+    if (_userLocation == null || _listings.isEmpty) return;
+    setState(() => _isLoadingNearby = true);
+
+    final userLat = _userLocation!.latitude;
+    final userLng = _userLocation!.longitude;
+
+    // Har listing ke liye city → coordinates → distance
+    final List<Listing> withDist = [];
+    for (final listing in _listings) {
+      if (listing.city.isEmpty) {
+        withDist.add(listing);
+        continue;
+      }
+      try {
+        final geo = await LocationService.getCoordinatesForCity(listing.city);
+        if (geo != null) {
+          final km = LocationService.distanceKm(
+            userLat, userLng, geo.latitude, geo.longitude,
+          );
+          withDist.add(listing.withDistance(km));
+        } else {
+          withDist.add(listing);
+        }
+      } catch (_) {
+        withDist.add(listing);
+      }
+    }
+
+    // Distance ke hisaab se sort — nearest first
+    final nearby = withDist
+        .where((l) => l.distanceKm != null)
+        .toList()
+      ..sort((a, b) => a.distanceKm!.compareTo(b.distanceKm!));
+
+    if (mounted) {
+      setState(() {
+        _listings = withDist;
+        _nearbyListings = nearby.take(6).toList();
+        _isLoadingNearby = false;
+      });
     }
   }
 
@@ -307,7 +382,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Listing> get _filteredListings {
-    return _listings.where((listing) {
+    List<Listing> source = _listings;
+
+    // "Sort by distance" on hone par nearest first
+    if (_sortByDistance) {
+      source = [...source]..sort((a, b) {
+        if (a.distanceKm == null && b.distanceKm == null) return 0;
+        if (a.distanceKm == null) return 1;
+        if (b.distanceKm == null) return -1;
+        return a.distanceKm!.compareTo(b.distanceKm!);
+      });
+    }
+
+    return source.where((listing) {
       final title = listing.title.toLowerCase();
       final city = listing.city.toLowerCase();
       final tag = listing.tag.toLowerCase();
@@ -332,6 +419,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesReligion = _activeFilter.religion.isEmpty ||
           tag.contains(_activeFilter.religion.toLowerCase());
 
+      // Radius filter (km)
+      final matchesRadius = _activeFilter.radiusKm <= 0 ||
+          listing.distanceKm == null ||
+          listing.distanceKm! <= _activeFilter.radiusKm;
+
       bool matchesChip = true;
       if (_selectedFilter != 'All') {
         if (_selectedFilter == 'Female') {
@@ -347,6 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
           matchesLocation &&
           matchesBudget &&
           matchesReligion &&
+          matchesRadius &&
           matchesChip;
     }).toList();
   }
@@ -370,6 +463,10 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(
                 child: _buildHeader(),
               ),
+              // LOCATION BANNER
+              SliverToBoxAdapter(
+                child: _buildLocationBanner(),
+              ),
               // SEARCH BAR
               SliverToBoxAdapter(
                 child: _buildSearchBar(),
@@ -381,6 +478,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // QUICK STATS
               SliverToBoxAdapter(
                 child: _buildQuickStats(),
+              ),
+              // NEAR ME SECTION
+              if (_nearbyListings.isNotEmpty) SliverToBoxAdapter(
+                child: _buildNearMeSection(),
               ),
               // LOCATION QUICK FILTERS
               SliverToBoxAdapter(
@@ -661,6 +762,263 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  // ---- LOCATION BANNER ----
+  Widget _buildLocationBanner() {
+    // Location loading hai
+    if (_isLoadingLocation) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kBorder),
+        ),
+        child: const Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2, color: _kGold),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Detecting your location...',
+              style: TextStyle(color: _kMutedText, fontSize: 12.5),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Location denied ya unavailable
+    if (_locationDenied || _userLocation == null) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kBorder),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.location_off_outlined, color: _kMutedText, size: 16),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Location off — enable to see nearby listings',
+                style: TextStyle(color: _kMutedText, fontSize: 12),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                LocationService.clearCache();
+                _loadLocation();
+              },
+              child: const Text(
+                'Enable',
+                style: TextStyle(
+                  color: _kGold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Location available — city name + distance sort toggle
+    final city = _userLocation!.cityName ?? 'Your Location';
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_kGold.withValues(alpha: 0.12), _kSurface],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _kGold.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.my_location, color: _kGold, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '📍 $city',
+              style: const TextStyle(color: Colors.white, fontSize: 12.5),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _sortByDistance = !_sortByDistance),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _sortByDistance
+                    ? _kGold
+                    : _kGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _sortByDistance ? '✓ Near Me' : 'Near Me',
+                style: TextStyle(
+                  color: _sortByDistance ? _kBackground : _kGold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---- NEAR ME SECTION ----
+  Widget _buildNearMeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_kGold, _kGoldLight],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                '📍  Aap ke Qareeb',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_isLoadingNearby)
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 1.5, color: _kGold),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            itemCount: _nearbyListings.length,
+            itemBuilder: (context, index) {
+              final listing = _nearbyListings[index];
+              final km = listing.distanceKm;
+              final dist = km != null ? LocationService.formatDistance(km) : '';
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ListingDetailScreen(
+                      listingData: listing.toDisplayMap(),
+                      listingId: listing.id,
+                    ),
+                  ),
+                ),
+                child: Container(
+                  width: 200,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: _kCardBg,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.25)),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.home_outlined, color: _kGold, size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              listing.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        listing.city,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: _kMutedText, fontSize: 11),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            listing.rentDisplay,
+                            style: const TextStyle(
+                              color: _kGoldLight,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (dist.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _kGold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                dist,
+                                style: const TextStyle(
+                                  color: _kGold,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1945,7 +2303,17 @@ class _ListingCardState extends State<ListingCard> {
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
-                          widget.data['city'] ?? '',
+                          () {
+                            final city = widget.data['city'] ?? '';
+                            final distStr = widget.data['distanceKm'] ?? '';
+                            if (distStr.isNotEmpty) {
+                              final km = double.tryParse(distStr);
+                              if (km != null) {
+                                return '$city • ${LocationService.formatDistance(km)}';
+                              }
+                            }
+                            return city;
+                          }(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

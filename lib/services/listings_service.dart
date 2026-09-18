@@ -14,6 +14,9 @@ class Listing {
   final DateTime? createdAt;
   final bool isFeatured;
 
+  /// User se distance (km mein) — nullable hai agar location nahi mili
+  final double? distanceKm;
+
   const Listing({
     required this.id,
     required this.title,
@@ -26,6 +29,7 @@ class Listing {
     this.userId,
     this.createdAt,
     this.isFeatured = false,
+    this.distanceKm,
   });
 
   factory Listing.fromMap(Map<String, dynamic> map) {
@@ -77,7 +81,26 @@ class Listing {
       'tag': tag,
       'description': description ?? '',
       'imageUrl': imageUrl ?? '',
+      'distanceKm': distanceKm?.toStringAsFixed(2) ?? '',
     };
+  }
+
+  /// Distance ke sath naya Listing object banata hai
+  Listing withDistance(double km) {
+    return Listing(
+      id: id,
+      title: title,
+      city: city,
+      rent: rent,
+      period: period,
+      tag: tag,
+      description: description,
+      imageUrl: imageUrl,
+      userId: userId,
+      createdAt: createdAt,
+      isFeatured: isFeatured,
+      distanceKm: km,
+    );
   }
 }
 

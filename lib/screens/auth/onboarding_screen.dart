@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
@@ -11,6 +12,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int currentPage = 0;
+  Timer? _autoSlideTimer;
 
   final List<Map<String, dynamic>> pages = [
     {
@@ -35,10 +37,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   void _navigateToLogin() {
+    _stopAutoSlide();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (currentPage < pages.length - 1) {
+        _controller.nextPage(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _controller.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _stopAutoSlide() {
+    _autoSlideTimer?.cancel();
+    _autoSlideTimer = null;
+  }
+
+  void _resetAutoSlide() {
+    _stopAutoSlide();
+    _startAutoSlide();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _stopAutoSlide();
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,6 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   setState(() {
                     currentPage = index;
                   });
+                  _resetAutoSlide();
                 },
                 itemBuilder: (context, index) {
                   final page = pages[index];
@@ -259,6 +303,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
                             );
+                            _resetAutoSlide();
                           } else {
                             _navigateToLogin();
                           }
