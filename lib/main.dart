@@ -47,7 +47,7 @@ Future<void> main() async {
     final prefs = await SharedPreferences.getInstance();
     hasLoggedInBefore = prefs.getBool('has_logged_in') ?? false;
   } catch (e) {
-    debugPrint('Failed to initialize SharedPreferences: $e');
+    debugPrint('Failed to initialize SharedPreference: $e');
   }
 
   bool hasActiveSession = false;
@@ -55,7 +55,7 @@ Future<void> main() async {
     try {
       hasActiveSession = Supabase.instance.client.auth.currentSession != null;
     } catch (e) {
-      debugPrint('Failed to check active session: $e');
+      debugPrint('Failed to check active sessions: $e');
     }
   }
 
@@ -96,7 +96,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-//he
-//fwefw
-//efds
-//dwsd
