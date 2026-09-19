@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 // ---- Theme ----
 const Color _kBg = Color(0xFF0D0D0D);
@@ -311,7 +311,62 @@ class _FilterScreenState extends State<FilterScreen> {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      child: Column(\r\n        children: [\r\n          Row(\r\n            mainAxisAlignment: MainAxisAlignment.spaceBetween,\r\n            children: [\r\n              Row(\r\n                children: [\r\n                  Icon(Icons.my_location, color: isOff ? _kMuted : _kGold, size: 16),\r\n                  const SizedBox(width: 8),\r\n                  Text(\r\n                    isOff ? 'No radius limit' : '${_radiusKm.toInt()} km aas paas',\r\n                    style: TextStyle(\r\n                      color: isOff ? _kMuted : Colors.white,\r\n                      fontSize: 13.5,\r\n                      fontWeight: isOff ? FontWeight.normal : FontWeight.w600,\r\n                    ),\r\n                  ),\r\n                ],\r\n              ),\r\n              if (!isOff)\r\n                GestureDetector(\r\n                  onTap: () => setState(() => _radiusKm = 0),\r\n                  child: const Icon(Icons.close, color: _kMuted, size: 16),\r\n                ),\r\n            ],\r\n          ),\r\n          SliderTheme(\r\n            data: SliderThemeData(\r\n              activeTrackColor: _kGold,\r\n              inactiveTrackColor: _kBorder,\r\n              thumbColor: _kGold,\r\n              overlayColor: _kGold.withValues(alpha: 0.15),\r\n              trackHeight: 3,\r\n              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),\r\n            ),\r\n            child: Slider(\r\n              min: 0,\r\n              max: 100,\r\n              divisions: 20,\r\n              value: _radiusKm,\r\n              onChanged: (v) => setState(() => _radiusKm = v),\r\n            ),\r\n          ),\r\n          Row(\r\n            mainAxisAlignment: MainAxisAlignment.spaceBetween,\r\n            children: const [\r\n              Text('Off', style: TextStyle(color: _kMuted, fontSize: 10)),\r\n              Text('100 km', style: TextStyle(color: _kMuted, fontSize: 10)),\r\n            ],\r\n          ),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n\r\n  Widget _buildLocationButton() {
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.my_location, color: isOff ? _kMuted : _kGold, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    isOff ? 'No radius limit' : '${_radiusKm.toInt()} km aas paas',
+                    style: TextStyle(
+                      color: isOff ? _kMuted : Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: isOff ? FontWeight.normal : FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              if (!isOff)
+                GestureDetector(
+                  onTap: () => setState(() => _radiusKm = 0),
+                  child: const Icon(Icons.close, color: _kMuted, size: 16),
+                ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: _kGold,
+              inactiveTrackColor: _kBorder,
+              thumbColor: _kGold,
+              overlayColor: _kGold.withValues(alpha: 0.15),
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+            ),
+            child: Slider(
+              min: 0,
+              max: 100,
+              divisions: 20,
+              value: _radiusKm,
+              onChanged: (v) => setState(() => _radiusKm = v),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('Off', style: TextStyle(color: _kMuted, fontSize: 10)),
+              Text('100 km', style: TextStyle(color: _kMuted, fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationButton() {
     final hasSelection = _selectedCity != null && _selectedCity!.isNotEmpty;
     return GestureDetector(
       onTap: () => setState(() => _showLocationPicker = !_showLocationPicker),
