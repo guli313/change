@@ -13,6 +13,7 @@ import '../profile/my_profile_screen.dart';
 import 'favorites_screen.dart';
 import 'filter_screen.dart';
 import 'listing_detail_screen.dart';
+import 'map_screen.dart';
 import 'notifications_screen.dart';
 import 'requests_screen.dart';
 import 'see_all_listings_screen.dart';
@@ -815,6 +816,39 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MapScreen(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: _kGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.map_outlined, color: _kGold, size: 12),
+                  SizedBox(width: 4),
+                  Text(
+                    'Map View',
+                    style: TextStyle(
+                      color: _kGold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          GestureDetector(
             onTap: () => setState(() => _sortByDistance = !_sortByDistance),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -876,6 +910,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 12,
                   child: CircularProgressIndicator(strokeWidth: 1.5, color: _kGold),
                 ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MapScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.map_outlined, color: _kGold, size: 14),
+                      SizedBox(width: 5),
+                      Text(
+                        'Map',
+                        style: TextStyle(
+                          color: _kGold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
