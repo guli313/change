@@ -1159,6 +1159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 12),
                   Text(
                     name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1169,6 +1171,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.white70,
@@ -1178,92 +1182,102 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            _buildDrawerItem(
-              Icons.home_outlined,
-              'Home',
-              () => Navigator.pop(context),
+            // ---- Scrollable menu items ----
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildDrawerItem(
+                      Icons.home_outlined,
+                      'Home',
+                      () => Navigator.pop(context),
+                    ),
+                    _buildDrawerItem(
+                      Icons.person_outline,
+                      'My Profile',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MyProfileScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.favorite_border,
+                      'Favorites',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.description_outlined,
+                      'My Requests',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RequestsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.chat_bubble_outline,
+                      'Chats',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChatScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(color: _kBorder, indent: 20, endIndent: 20),
+                    _buildDrawerItem(
+                      Icons.help_outline,
+                      'Help & Support',
+                      () {
+                        Navigator.pop(context);
+                        _showHelpDialog();
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.info_outline,
+                      'About',
+                      () {
+                        Navigator.pop(context);
+                        _showAboutDialog();
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.description_outlined,
+                      'Terms & Conditions',
+                      () {
+                        Navigator.pop(context);
+                        _showTermsDialog();
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
-            _buildDrawerItem(
-              Icons.person_outline,
-              'My Profile',
-              () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MyProfileScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              Icons.favorite_border,
-              'Favorites',
-              () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FavoritesScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              Icons.description_outlined,
-              'My Requests',
-              () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RequestsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildDrawerItem(
-              Icons.chat_bubble_outline,
-              'Chats',
-              () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ChatScreen(),
-                  ),
-                );
-              },
-            ),
-            const Divider(color: _kBorder, indent: 20, endIndent: 20),
-            _buildDrawerItem(
-              Icons.help_outline,
-              'Help & Support',
-              () {
-                Navigator.pop(context);
-                _showHelpDialog();
-              },
-            ),
-            _buildDrawerItem(
-              Icons.info_outline,
-              'About',
-              () {
-                Navigator.pop(context);
-                _showAboutDialog();
-              },
-            ),
-            _buildDrawerItem(
-              Icons.description_outlined,
-              'Terms & Conditions',
-              () {
-                Navigator.pop(context);
-                _showTermsDialog();
-              },
-            ),
-            const Spacer(),
+            // ---- Fixed bottom section ----
+            const Divider(color: _kBorder, height: 1),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
