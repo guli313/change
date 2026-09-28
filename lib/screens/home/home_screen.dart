@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,7 +16,6 @@ import 'notifications_screen.dart';
 import 'requests_screen.dart';
 import 'see_all_listings_screen.dart';
 
-// ---- Theme colors ----
 const Color _kBackground = Color(0xFF0D0D0D);
 const Color _kSurface = Color(0xFF1A1717);
 const Color _kCardBg = Color(0xFF1C1919);
@@ -30,7 +27,6 @@ const Color _kMaroonEnd = Color(0xFF4E1220);
 const Color _kMutedText = Color(0xFF9B9B9B);
 const Color _kBorder = Color(0xFF2A2626);
 
-// ---- Sample data fallback ----
 const List<Map<String, String>> _kSampleListings = [
   {
     'id': 'sample_1',
@@ -88,27 +84,6 @@ const List<Map<String, String>> _kSampleListings = [
   },
 ];
 
-// ---- Banner data ----
-const List<Map<String, String>> _kBanners = [
-  {
-    'title': 'Find Your Perfect Roommate',
-    'subtitle': 'Browse verified listings worldwide — from Pakistan to London',
-    'icon': 'search',
-  },
-  {
-    'title': 'Safety First',
-    'subtitle': 'All listings are verified. Chat securely before meeting.',
-    'icon': 'shield',
-  },
-  {
-    'title': 'Post Your Listing',
-    'subtitle': 'Have a room? Post it free and reach thousands of seekers.',
-    'icon': 'post',
-  },
-];
-
-
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -124,16 +99,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  // Data
   String _userName = 'Guest';
   List<Listing> _listings = [];
-  List<Listing> _featuredListings = [];
   bool _isLoading = true;
-  int _totalListings = 0;
-  int _recentCount = 0;
   int _unreadChatCount = 2;
 
-  // Location
   UserLocation? _userLocation;
   bool _isLoadingLocation = false;
   bool _locationDenied = false;
@@ -141,17 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Listing> _nearbyListings = [];
   bool _isLoadingNearby = false;
 
-  // Banner carousel
-  final PageController _bannerController = PageController();
-  int _currentBannerIndex = 0;
-  Timer? _bannerTimer;
-
   final List<String> _filters = const [
     'All',
     'Female',
     'Male',
-    'Short Term',
-    'Long Term',
   ];
 
   @override
@@ -160,34 +123,14 @@ class _HomeScreenState extends State<HomeScreen> {
     FavoritesService.init();
     _loadUserName();
     _loadListings();
-    _startBannerTimer();
-    _loadLocation(); // GPS location start karo
+    _loadLocation();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _bannerController.dispose();
-    _bannerTimer?.cancel();
     super.dispose();
-  }
-
-  void _startBannerTimer() {
-    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_currentBannerIndex < _kBanners.length - 1) {
-        _currentBannerIndex++;
-      } else {
-        _currentBannerIndex = 0;
-      }
-      if (_bannerController.hasClients) {
-        _bannerController.animateToPage(
-          _currentBannerIndex,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
   }
 
   void _loadUserName() {
@@ -208,20 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadListings() async {
     setState(() => _isLoading = true);
     try {
-      final listings = await ListingsService.fetchRecent(limit: 20);
-      final featured = await ListingsService.fetchFeatured();
-      final total = await ListingsService.fetchTotalCount();
-      final recent = await ListingsService.fetchRecentCount(days: 7);
-
+      final listings = await ListingsService.fetchRecent(limit: 30);
       if (mounted) {
         setState(() {
           _listings = listings.isEmpty ? _buildSampleListings() : listings;
-          _featuredListings = featured.isEmpty ? _listings.where((l) => l.isFeatured || l.rent > 20000).toList() : featured;
-          _totalListings = total == 0 ? _listings.length : total;
-          _recentCount = recent == 0 ? 3 : recent;
           _isLoading = false;
         });
-        // Listings load hone ke baad distance calculate karo
         if (_userLocation != null) {
           _computeDistances();
         }
@@ -230,9 +165,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _listings = _buildSampleListings();
-          _featuredListings = _listings.take(3).toList();
-          _totalListings = _listings.length;
-          _recentCount = 3;
           _isLoading = false;
         });
       }
@@ -320,21 +252,18 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         break;
       case 1:
-        _searchFocusNode.requestFocus();
-        break;
-      case 2:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const RequestsScreen()),
         );
         break;
-      case 3:
+      case 2:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MyProfileScreen()),
         );
         break;
-      case 4:
+      case 3:
         setState(() => _unreadChatCount = 0);
         Navigator.push(
           context,
@@ -348,7 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Listing> get _filteredListings {
     List<Listing> source = _listings;
 
-    // "Sort by distance" on hone par nearest first
     if (_sortByDistance) {
       source = [...source]..sort((a, b) {
         if (a.distanceKm == null && b.distanceKm == null) return 0;
@@ -383,7 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesReligion = _activeFilter.religion.isEmpty ||
           tag.contains(_activeFilter.religion.toLowerCase());
 
-      // Radius filter (km)
       final matchesRadius = _activeFilter.radiusKm <= 0 ||
           listing.distanceKm == null ||
           listing.distanceKm! <= _activeFilter.radiusKm;
@@ -394,8 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
           matchesChip = tag.contains('female');
         } else if (_selectedFilter == 'Male') {
           matchesChip = tag.contains('male');
-        } else {
-          matchesChip = tag.contains(_selectedFilter.toLowerCase());
         }
       }
 
@@ -423,80 +348,33 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: CustomScrollView(
             slivers: [
-              // HEADER
-              SliverToBoxAdapter(
-                child: _buildHeader(),
-              ),
-              // LOCATION BANNER
-              SliverToBoxAdapter(
-                child: _buildLocationBanner(),
-              ),
-              // SEARCH BAR
-              SliverToBoxAdapter(
-                child: _buildSearchBar(),
-              ),
-              // FILTER CHIPS
-              SliverToBoxAdapter(
-                child: _buildFilterChips(),
-              ),
-              // QUICK STATS
-              SliverToBoxAdapter(
-                child: _buildQuickStats(),
-              ),
-              // NEAR ME SECTION
-              if (_nearbyListings.isNotEmpty) SliverToBoxAdapter(
-                child: _buildNearMeSection(),
-              ),
-
-              // BANNER CAROUSEL
-              SliverToBoxAdapter(
-                child: _buildBannerCarousel(),
-              ),
-              // FEATURED SECTION
-              if (_featuredListings.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: _buildSectionHeader(
-                    'Featured Listings',
-                    onSeeAll: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SeeAllListingsScreen(
-                            title: 'Featured Listings',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: _buildFeaturedCarousel(),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              ],
-              // RECENTLY ADDED
+              SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildLocationBanner()),
+              SliverToBoxAdapter(child: _buildSearchBar()),
+              SliverToBoxAdapter(child: _buildFilterChips()),
+              if (_nearbyListings.isNotEmpty)
+                SliverToBoxAdapter(child: _buildNearMeSection()),
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
-                  'Recently Added',
+                  'Sab Listings',
                   onSeeAll: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const SeeAllListingsScreen(
-                          title: 'Recently Added',
+                          title: 'Sab Listings',
                         ),
                       ),
                     );
                   },
                 ),
               ),
-              // LISTINGS GRID
               _isLoading
                   ? SliverToBoxAdapter(child: _buildShimmerGrid())
                   : _filteredListings.isEmpty
                       ? SliverToBoxAdapter(child: _buildEmptyState())
                       : SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                           sliver: SliverGrid(
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
@@ -558,7 +436,15 @@ class _HomeScreenState extends State<HomeScreen> {
           Builder(
             builder: (ctx) => GestureDetector(
               onTap: () => Scaffold.of(ctx).openDrawer(),
-              child: const Icon(Icons.menu, color: _kGold, size: 26),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _kSurface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _kBorder),
+                ),
+                child: const Icon(Icons.menu, color: _kGold, size: 22),
+              ),
             ),
           ),
           const SizedBox(width: 14),
@@ -567,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hello, $_userName',
+                  'Salam, $_userName 👋',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -576,30 +462,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'Find your perfect roommate',
+                  'Aaj roomie dhoondhain',
                   style: TextStyle(fontSize: 12, color: _kMutedText),
                 ),
               ],
             ),
           ),
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: _kGold,
-                  size: 26,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationsScreen(),
-                    ),
-                  );
-                },
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _kSurface,
+                shape: BoxShape.circle,
+                border: Border.all(color: _kBorder),
               ),
-            ],
+              child: const Icon(
+                Icons.notifications_none,
+                color: _kGold,
+                size: 22,
+              ),
+            ),
           ),
         ],
       ),
@@ -724,7 +614,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ---- LOCATION BANNER ----
   Widget _buildLocationBanner() {
-    // Location loading hai
     if (_isLoadingLocation) {
       return Container(
         margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -743,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(width: 10),
             Text(
-              'Detecting your location...',
+              'Location dekh rahe hain...',
               style: TextStyle(color: _kMutedText, fontSize: 12.5),
             ),
           ],
@@ -751,7 +640,6 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Location denied ya unavailable
     if (_locationDenied || _userLocation == null) {
       return Container(
         margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -767,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
-                'Location off — enable to see nearby listings',
+                'Location chalao — qareeb rooms dekhne ke liye',
                 style: TextStyle(color: _kMutedText, fontSize: 12),
               ),
             ),
@@ -777,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _loadLocation();
               },
               child: const Text(
-                'Enable',
+                'Chalao',
                 style: TextStyle(
                   color: _kGold,
                   fontSize: 12,
@@ -790,11 +678,10 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // Location available — city name + distance sort toggle
-    final city = _userLocation!.cityName ?? 'Your Location';
+    final city = _userLocation!.cityName ?? 'Aap ki Location';
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [_kGold.withValues(alpha: 0.12), _kSurface],
@@ -806,67 +693,59 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.my_location, color: _kGold, size: 16),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: _kGold.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.my_location, color: _kGold, size: 16),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              '📍 $city',
-              style: const TextStyle(color: Colors.white, fontSize: 12.5),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '📍 $city',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _sortByDistance ? 'Qareeb wale pehle' : 'Sabhi listings dikh rahe hain',
+                  style: TextStyle(color: _kMutedText, fontSize: 11),
+                ),
+              ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MapScreen(),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: _kGold.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.map_outlined, color: _kGold, size: 12),
-                  SizedBox(width: 4),
-                  Text(
-                    'Map View',
-                    style: TextStyle(
-                      color: _kGold,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _MiniActionBtn(
+                icon: Icons.map_outlined,
+                label: 'Map',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MapScreen(),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() => _sortByDistance = !_sortByDistance),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: _sortByDistance
-                    ? _kGold
-                    : _kGold.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
+              const SizedBox(width: 6),
+              _MiniActionBtn(
+                icon: Icons.near_me,
+                label: 'Qareeb',
+                active: _sortByDistance,
+                onTap: () => setState(() => _sortByDistance = !_sortByDistance),
               ),
-              child: Text(
-                _sortByDistance ? '✓ Near Me' : 'Near Me',
-                style: TextStyle(
-                  color: _sortByDistance ? _kBackground : _kGold,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -879,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
           child: Row(
             children: [
               Container(
@@ -896,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 10),
               const Text(
-                '📍  Aap ke Qareeb',
+                'Aap ke Qareeb',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -908,7 +787,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(
                   width: 12,
                   height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 1.5, color: _kGold),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 1.5, color: _kGold),
                 ),
               const Spacer(),
               GestureDetector(
@@ -920,27 +800,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _kGold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.4)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.map_outlined, color: _kGold, size: 14),
-                      SizedBox(width: 5),
-                      Text(
-                        'Map',
-                        style: TextStyle(
-                          color: _kGold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                child: const Text(
+                  'Map dekhain →',
+                  style: TextStyle(
+                    color: _kGold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -948,7 +813,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         SizedBox(
-          height: 160,
+          height: 150,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -956,7 +821,8 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final listing = _nearbyListings[index];
               final km = listing.distanceKm;
-              final dist = km != null ? LocationService.formatDistance(km) : '';
+              final dist =
+                  km != null ? LocationService.formatDistance(km) : '';
               return GestureDetector(
                 onTap: () => Navigator.push(
                   context,
@@ -968,12 +834,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: Container(
-                  width: 200,
+                  width: 190,
                   margin: const EdgeInsets.only(right: 12),
                   decoration: BoxDecoration(
                     color: _kCardBg,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.25)),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.2)),
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -982,7 +848,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.home_outlined, color: _kGold, size: 14),
+                          const Icon(Icons.home_outlined,
+                              color: _kGold, size: 14),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -998,11 +865,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      Text(
-                        listing.city,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: _kMutedText, fontSize: 11),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              size: 11, color: _kGold),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              listing.city,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: _kMutedText, fontSize: 11),
+                            ),
+                          ),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1011,14 +888,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             listing.rentDisplay,
                             style: const TextStyle(
                               color: _kGoldLight,
-                              fontSize: 12,
+                              fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           if (dist.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3,
+                                horizontal: 8,
+                                vertical: 3,
                               ),
                               decoration: BoxDecoration(
                                 color: _kGold.withValues(alpha: 0.15),
@@ -1046,349 +924,50 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- QUICK STATS ----
-  Widget _buildQuickStats() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-      child: Row(
-        children: [
-          _buildStatChip(Icons.home_outlined, '$_totalListings Listings'),
-          const SizedBox(width: 10),
-          _buildStatChip(Icons.access_time, '$_recentCount New This Week'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatChip(IconData icon, String text) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: _kSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kBorder),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: _kGold, size: 16),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-
-  // ---- BANNER CAROUSEL ----
-  Widget _buildBannerCarousel() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 100,
-            child: PageView.builder(
-              controller: _bannerController,
-              itemCount: _kBanners.length,
-              onPageChanged: (index) {
-                setState(() => _currentBannerIndex = index);
-              },
-              itemBuilder: (context, index) {
-                final banner = _kBanners[index];
-                IconData icon;
-                switch (banner['icon']) {
-                  case 'shield':
-                    icon = Icons.shield_outlined;
-                    break;
-                  case 'post':
-                    icon = Icons.add_circle_outline;
-                    break;
-                  default:
-                    icon = Icons.search;
-                }
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _kGold.withValues(alpha: 0.15),
-                          _kSurface,
-                        ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                        child: Icon(icon, color: _kGold, size: 24),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              banner['title']!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              banner['subtitle']!,
-                              style: const TextStyle(
-                                color: _kMutedText,
-                                fontSize: 11.5,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              _kBanners.length,
-              (index) => Container(
-                width: _currentBannerIndex == index ? 20 : 6,
-                height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                decoration: BoxDecoration(
-                  color: _currentBannerIndex == index ? _kGold : _kBorder,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---- FEATURED CAROUSEL ----
-  Widget _buildFeaturedCarousel() {
-    return SizedBox(
-      height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-        itemCount: _featuredListings.length,
-        itemBuilder: (context, index) {
-          final listing = _featuredListings[index];
-          final data = listing.toDisplayMap();
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ListingDetailScreen(
-                    listingData: data,
-                    listingId: listing.id,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              width: 240,
-              margin: const EdgeInsets.only(right: 14),
-              decoration: BoxDecoration(
-                color: _kCardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _kGold.withValues(alpha: 0.3)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF2A2424), Color(0xFF1A1616)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.star_outline,
-                              color: _kGold,
-                              size: 36,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _kGold,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'FEATURED',
-                              style: TextStyle(
-                                color: _kBackground,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (listing.tag.isNotEmpty)
-                          Positioned(
-                            left: 0,
-                            bottom: 0,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: const BoxDecoration(
-                                color: _kMaroon,
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                listing.tag,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            listing.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                size: 11,
-                                color: _kGold,
-                              ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                child: Text(
-                                  listing.city,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: _kMutedText,
-                                    fontSize: 10.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${listing.rentDisplay}${listing.period}',
-                            style: const TextStyle(
-                              color: _kGoldLight,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   // ---- SECTION HEADER ----
   Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_kGold, _kGoldLight],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: onSeeAll,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 0),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          if (onSeeAll != null)
+            GestureDetector(
+              onTap: onSeeAll,
+              child: const Text(
+                'Sab dekhain',
+                style: TextStyle(
+                  color: _kGold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            child: const Text(
-              'See all',
-              style: TextStyle(color: _kGold, fontSize: 13),
-            ),
-          ),
         ],
       ),
     );
@@ -1602,12 +1181,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             _buildDrawerItem(
               Icons.home_outlined,
-              'Home',
+              'Ghar',
               () => Navigator.pop(context),
             ),
             _buildDrawerItem(
               Icons.person_outline,
-              'My Profile',
+              'Meri Profile',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1620,7 +1199,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               Icons.favorite_border,
-              'Favorites',
+              'Pasandeeda',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1633,7 +1212,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               Icons.description_outlined,
-              'My Requests',
+              'Meri Darkhwastain',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1838,35 +1417,73 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _NavIcon(
               icon: Icons.home,
-              label: 'Home',
+              label: 'Ghar',
               isActive: currentIndex == 0,
               onTap: () => _onItemTapped(0),
             ),
             _NavIcon(
-              icon: Icons.search,
-              label: 'Search',
+              icon: Icons.description_outlined,
+              label: 'Darkhwastain',
               isActive: currentIndex == 1,
               onTap: () => _onItemTapped(1),
             ),
             const SizedBox(width: 48),
             _NavIcon(
-              icon: Icons.description_outlined,
-              label: 'Requests',
+              icon: Icons.person_outline,
+              label: 'Profile',
               isActive: currentIndex == 2,
               onTap: () => _onItemTapped(2),
             ),
             _NavIcon(
-              icon: Icons.person_outline,
-              label: 'Profile',
-              isActive: currentIndex == 3,
-              onTap: () => _onItemTapped(3),
-            ),
-            _NavIcon(
               icon: Icons.chat_bubble_outline,
               label: 'Chat',
-              isActive: currentIndex == 4,
-              onTap: () => _onItemTapped(4),
+              isActive: currentIndex == 3,
+              onTap: () => _onItemTapped(3),
               badgeCount: _unreadChatCount,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _MiniActionBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? _kGold : _kGold.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                color: active ? _kBackground : _kGold, size: 13),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? _kBackground : _kGold,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
