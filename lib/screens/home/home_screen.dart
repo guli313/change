@@ -258,12 +258,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         break;
       case 2:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const MyProfileScreen()),
-        );
-        break;
-      case 3:
         setState(() => _unreadChatCount = 0);
         Navigator.push(
           context,
@@ -488,6 +482,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icons.notifications_none,
                 color: _kGold,
                 size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyProfileScreen(),
+                ),
+              );
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [_kGold, _kGoldLight],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(color: _kGold.withValues(alpha: 0.4), width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: _kBackground,
+                  ),
+                ),
               ),
             ),
           ),
@@ -1443,16 +1471,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 48),
             _NavIcon(
-              icon: Icons.person_outline,
-              label: 'Profile',
-              isActive: currentIndex == 2,
-              onTap: () => _onItemTapped(2),
-            ),
-            _NavIcon(
               icon: Icons.chat_bubble_outline,
               label: 'Chat',
-              isActive: currentIndex == 3,
-              onTap: () => _onItemTapped(3),
+              isActive: currentIndex == 2,
+              onTap: () => _onItemTapped(2),
               badgeCount: _unreadChatCount,
             ),
           ],
