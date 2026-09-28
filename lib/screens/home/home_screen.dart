@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Har listing ke liye city geocode karke distance calculate karo
+  /// Geocode each listing's city and calculate the distance
   Future<void> _computeDistances() async {
     if (_userLocation == null || _listings.isEmpty) return;
     setState(() => _isLoadingNearby = true);
@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final userLat = _userLocation!.latitude;
     final userLng = _userLocation!.longitude;
 
-    // Har listing ke liye city → coordinates → distance
+    // For each listing: city → coordinates → distance
     final List<Listing> withDist = [];
     for (final listing in _listings) {
       if (listing.city.isEmpty) {
@@ -217,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Distance ke hisaab se sort — nearest first
+    // Sort by distance — nearest first
     final nearby = withDist
         .where((l) => l.distanceKm != null)
         .toList()
@@ -356,13 +356,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverToBoxAdapter(child: _buildNearMeSection()),
               SliverToBoxAdapter(
                 child: _buildSectionHeader(
-                  'Sab Listings',
+                  'All Listings',
                   onSeeAll: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const SeeAllListingsScreen(
-                          title: 'Sab Listings',
+                          title: 'All Listings',
                         ),
                       ),
                     );
@@ -453,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Salam, $_userName 👋',
+                  'Hello, $_userName 👋',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -462,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'Aaj roomie dhoondhain',
+                  'Find your roommate today',
                   style: TextStyle(fontSize: 12, color: _kMutedText),
                 ),
               ],
@@ -632,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SizedBox(width: 10),
             Text(
-              'Location dekh rahe hain...',
+              'Detecting location...',
               style: TextStyle(color: _kMutedText, fontSize: 12.5),
             ),
           ],
@@ -655,7 +655,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
-                'Location chalao — qareeb rooms dekhne ke liye',
+                'Enable location — to see nearby rooms',
                 style: TextStyle(color: _kMutedText, fontSize: 12),
               ),
             ),
@@ -665,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _loadLocation();
               },
               child: const Text(
-                'Chalao',
+                'Enable',
                 style: TextStyle(
                   color: _kGold,
                   fontSize: 12,
@@ -678,7 +678,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final city = _userLocation!.cityName ?? 'Aap ki Location';
+    final city = _userLocation!.cityName ?? 'Your Location';
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -716,7 +716,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _sortByDistance ? 'Qareeb wale pehle' : 'Sabhi listings dikh rahe hain',
+                  _sortByDistance ? 'Nearest first' : 'Showing all listings',
                   style: TextStyle(color: _kMutedText, fontSize: 11),
                 ),
               ],
@@ -741,7 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 6),
               _MiniActionBtn(
                 icon: Icons.near_me,
-                label: 'Qareeb',
+                label: 'Nearby',
                 active: _sortByDistance,
                 onTap: () => setState(() => _sortByDistance = !_sortByDistance),
               ),
@@ -775,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 10),
               const Text(
-                'Aap ke Qareeb',
+                'Near You',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -801,7 +801,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: const Text(
-                  'Map dekhain →',
+                  'View Map →',
                   style: TextStyle(
                     color: _kGold,
                     fontSize: 12,
@@ -960,7 +960,7 @@ class _HomeScreenState extends State<HomeScreen> {
             GestureDetector(
               onTap: onSeeAll,
               child: const Text(
-                'Sab dekhain',
+                'See All',
                 style: TextStyle(
                   color: _kGold,
                   fontSize: 12,
@@ -1181,12 +1181,12 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             _buildDrawerItem(
               Icons.home_outlined,
-              'Ghar',
+              'Home',
               () => Navigator.pop(context),
             ),
             _buildDrawerItem(
               Icons.person_outline,
-              'Meri Profile',
+              'My Profile',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1199,7 +1199,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               Icons.favorite_border,
-              'Pasandeeda',
+              'Favorites',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1212,7 +1212,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _buildDrawerItem(
               Icons.description_outlined,
-              'Meri Darkhwastain',
+              'My Requests',
               () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -1417,13 +1417,13 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _NavIcon(
               icon: Icons.home,
-              label: 'Ghar',
+              label: 'Home',
               isActive: currentIndex == 0,
               onTap: () => _onItemTapped(0),
             ),
             _NavIcon(
               icon: Icons.description_outlined,
-              label: 'Darkhwastain',
+              label: 'Requests',
               isActive: currentIndex == 1,
               onTap: () => _onItemTapped(1),
             ),
