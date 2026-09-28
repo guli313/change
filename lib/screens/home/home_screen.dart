@@ -1451,33 +1451,49 @@ class _HomeScreenState extends State<HomeScreen> {
     return BottomAppBar(
       color: _kSurface,
       shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
+      notchMargin: 6,
       child: SizedBox(
-        height: 62,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavIcon(
-              icon: Icons.home,
-              label: 'Home',
-              isActive: currentIndex == 0,
-              onTap: () => _onItemTapped(0),
-            ),
-            _NavIcon(
-              icon: Icons.description_outlined,
-              label: 'Requests',
-              isActive: currentIndex == 1,
-              onTap: () => _onItemTapped(1),
-            ),
-            const SizedBox(width: 48),
-            _NavIcon(
-              icon: Icons.chat_bubble_outline,
-              label: 'Chat',
-              isActive: currentIndex == 2,
-              onTap: () => _onItemTapped(2),
-              badgeCount: _unreadChatCount,
-            ),
-          ],
+        height: 60,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _NavIcon(
+                      icon: Icons.home,
+                      label: 'Home',
+                      isActive: currentIndex == 0,
+                      onTap: () => _onItemTapped(0),
+                    ),
+                    _NavIcon(
+                      icon: Icons.description_outlined,
+                      label: 'Requests',
+                      isActive: currentIndex == 1,
+                      onTap: () => _onItemTapped(1),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 56),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _NavIcon(
+                      icon: Icons.chat_bubble_outline,
+                      label: 'Chat',
+                      isActive: currentIndex == 2,
+                      onTap: () => _onItemTapped(2),
+                      badgeCount: _unreadChatCount,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
