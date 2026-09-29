@@ -46,7 +46,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     debugPrint('CreateProfileScreen build');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Profile')),
+      appBar: AppBar(title: const Text('Create Profiles')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
