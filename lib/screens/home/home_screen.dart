@@ -36,6 +36,7 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': 'Female Only',
     'description': 'Spacious 2-bedroom apartment in DHA Phase 5, Lahore. Furnished with all basic amenities.',
+    'roomType': 'Apartment',
   },
   {
     'id': 'sample_2',
@@ -45,6 +46,7 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': '',
     'description': 'A clean single room available in Johar Town. Near market and public transport.',
+    'roomType': 'Single Room',
   },
   {
     'id': 'sample_3',
@@ -54,6 +56,7 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': 'Male Only',
     'description': 'Room available near FAST University campus. Ideal for students.',
+    'roomType': 'Single Room',
   },
   {
     'id': 'sample_4',
@@ -63,6 +66,7 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': '',
     'description': 'Shared room in DHA Karachi with modern facilities.',
+    'roomType': 'Shared Room',
   },
   {
     'id': 'sample_5',
@@ -72,6 +76,7 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': 'Female Only',
     'description': 'Fully furnished studio apartment in Gulberg III. All utilities included.',
+    'roomType': 'Studio',
   },
   {
     'id': 'sample_6',
@@ -81,8 +86,11 @@ const List<Map<String, String>> _kSampleListings = [
     'period': '/month',
     'tag': 'Male Only',
     'description': 'Shared hostel room near F-8 Markaz. WiFi and meals included.',
+    'roomType': 'Hostel',
   },
 ];
+
+enum SortOption { newest, priceLow, priceHigh, distance }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -96,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _selectedFilter = 'All';
   FilterCriteria _activeFilter = const FilterCriteria();
+  SortOption _sortOption = SortOption.newest;
+  bool _showSortSheet = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -116,6 +126,16 @@ class _HomeScreenState extends State<HomeScreen> {
     'Female',
     'Male',
   ];
+
+  List<String> get _activeFilterTags {
+    final tags = <String>[];
+    if (_selectedFilter != 'All') tags.add(_selectedFilter);
+    if (_activeFilter.location.isNotEmpty) tags.add('📍 ${_activeFilter.location}');
+    if (_activeFilter.budget.isNotEmpty) tags.add('💰 ≤ ${_activeFilter.budget}');
+    if (_activeFilter.religion.isNotEmpty) tags.add('✨ ${_activeFilter.religion}');
+    if (_activeFilter.radiusKm > 0) tags.add('📏 ${_activeFilter.radiusKm.toInt()} km');
+    return tags;
+  }
 
   @override
   void initState() {
@@ -171,7 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ---- LOCATION ----
   Future<void> _loadLocation() async {
     setState(() => _isLoadingLocation = true);
     final loc = await LocationService.getCurrentLocation();
@@ -187,7 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Geocode each listing's city and calculate the distance
   Future<void> _computeDistances() async {
     if (_userLocation == null || _listings.isEmpty) return;
     setState(() => _isLoadingNearby = true);
@@ -195,7 +213,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final userLat = _userLocation!.latitude;
     final userLng = _userLocation!.longitude;
 
-    // For each listing: city → coordinates → distance
     final List<Listing> withDist = [];
     for (final listing in _listings) {
       if (listing.city.isEmpty) {
@@ -217,7 +234,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Sort by distance — nearest first
     final nearby = withDist
         .where((l) => l.distanceKm != null)
         .toList()
@@ -246,6 +262,94 @@ class _HomeScreenState extends State<HomeScreen> {
     })).toList();
   }
 
+  List<Listing> get _filteredListings {
+    var result = List<Listing>.from(_listings);
+
+    if (_searchQuery.isNotEmpty) {
+      result = result.where((l) {
+        final q = _searchQuery.toLowerCase();
+        return l.title.toLowerCase().contains(q) ||
+            l.city.toLowerCase().contains(q) ||
+            (l.description ?? '').toLowerCase().contains(q) ||
+            l.tag.toLowerCase().contains(q);
+      }).toList();
+    }
+
+    if (_selectedFilter == 'Female') {
+      result = result.where((l) => l.tag.toLowerCase().contains('female')).toList();
+    } else if (_selectedFilter == 'Male') {
+      result = result.where((l) => l.tag.toLowerCase().contains('male')).toList();
+    }
+
+    if (_activeFilter.location.isNotEmpty) {
+      final loc = _activeFilter.location.toLowerCase();
+      result = result.where((l) => l.city.toLowerCase().contains(loc)).toList();
+    }
+
+    if (_activeFilter.budget.isNotEmpty) {
+      final budget = int.tryParse(_activeFilter.budget.replaceAll(RegExp(r'[^0-9]'), ''));
+      if (budget != null) {
+        result = result.where((l) => l.rent <= budget).toList();
+      }
+    }
+
+    if (_activeFilter.religion.isNotEmpty) {
+      final rel = _activeFilter.religion.toLowerCase();
+      result = result.where((l) =>
+        (l.description ?? '').toLowerCase().contains(rel) ||
+        l.tag.toLowerCase().contains(rel)).toList();
+    }
+
+    if (_activeFilter.radiusKm > 0) {
+      result = result.where((l) {
+        if (l.distanceKm == null) return false;
+        return l.distanceKm! <= _activeFilter.radiusKm;
+      }).toList();
+    }
+
+    switch (_sortOption) {
+      case SortOption.newest:
+        result.sort((a, b) {
+          final da = a.createdAt ?? DateTime(2000);
+          final db = b.createdAt ?? DateTime(2000);
+          return db.compareTo(da);
+        });
+        break;
+      case SortOption.priceLow:
+        result.sort((a, b) => a.rent.compareTo(b.rent));
+        break;
+      case SortOption.priceHigh:
+        result.sort((a, b) => b.rent.compareTo(a.rent));
+        break;
+      case SortOption.distance:
+        result.sort((a, b) {
+          final da = a.distanceKm ?? 999999;
+          final db = b.distanceKm ?? 999999;
+          return da.compareTo(db);
+        });
+        break;
+    }
+
+    return result;
+  }
+
+  List<Listing> get _featuredListings {
+    return _listings.where((l) => l.isFeatured).toList();
+  }
+
+  String get _sortLabel {
+    switch (_sortOption) {
+      case SortOption.newest:
+        return 'Newest';
+      case SortOption.priceLow:
+        return 'Price: Low → High';
+      case SortOption.priceHigh:
+        return 'Price: High → Low';
+      case SortOption.distance:
+        return 'Nearest First';
+    }
+  }
+
   void _onItemTapped(int index) {
     if (index == currentIndex) return;
     switch (index) {
@@ -270,6 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredListings;
     return Scaffold(
       backgroundColor: _kBackground,
       drawer: _buildDrawer(),
@@ -284,11 +389,23 @@ class _HomeScreenState extends State<HomeScreen> {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(child: _buildHeader()),
+              SliverToBoxAdapter(child: _buildHeroCTA()),
               SliverToBoxAdapter(child: _buildLocationBanner()),
               SliverToBoxAdapter(child: _buildSearchBar()),
               SliverToBoxAdapter(child: _buildFilterChips()),
+              if (_activeFilterTags.isNotEmpty)
+                SliverToBoxAdapter(child: _buildActiveFilterTags()),
+              if (_featuredListings.isNotEmpty)
+                SliverToBoxAdapter(child: _buildFeaturedSection()),
               if (_nearbyListings.isNotEmpty)
                 SliverToBoxAdapter(child: _buildNearMeSection()),
+              SliverToBoxAdapter(child: _buildAllListingsHeader(filtered.length)),
+              if (_isLoading)
+                const SliverToBoxAdapter(child: _buildLoadingGrid())
+              else if (filtered.isEmpty)
+                SliverToBoxAdapter(child: _buildEmptyState())
+              else
+                _buildListingsGrid(filtered),
               const SliverToBoxAdapter(child: SizedBox(height: 30)),
             ],
           ),
@@ -322,7 +439,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- HEADER ----
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -345,23 +461,23 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello, $_userName 👋',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hello, $_userName 👋',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Find your roommate today',
-                  style: TextStyle(fontSize: 12, color: _kMutedText),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Find your roommate today',
+                style: TextStyle(fontSize: 12, color: _kMutedText),
+              ),
+            ],
+          ),
           ),
           GestureDetector(
             onTap: () {
@@ -425,7 +541,126 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- SEARCH BAR ----
+  Widget _buildHeroCTA() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [_kMaroonStart, _kMaroonEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: _kGold.withValues(alpha: 0.3), width: 1),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.home_work_outlined, color: _kGoldLight, size: 22),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Welcome to Roommate Finder',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Choose what you want to do today:',
+              style: TextStyle(color: Colors.white70, fontSize: 12.5),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _searchFocusNode.requestFocus();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _kGold,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(Icons.search, color: _kMaroon, size: 22),
+                          SizedBox(height: 4),
+                          Text(
+                            'Find a Room',
+                            style: TextStyle(
+                              color: _kMaroon,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PostListingScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _kGold, width: 1.5),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(Icons.add_home_work_outlined,
+                              color: _kGold, size: 22),
+                          SizedBox(height: 4),
+                          Text(
+                            'Post a Room',
+                            style: TextStyle(
+                              color: _kGold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -500,7 +735,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- FILTER CHIPS ----
   Widget _buildFilterChips() {
     return SizedBox(
       height: 44,
@@ -541,7 +775,71 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- LOCATION BANNER ----
+  Widget _buildActiveFilterTags() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          ..._activeFilterTags.map((tag) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _kGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _kGold.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tag,
+                      style: const TextStyle(
+                        color: _kGold,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _activeFilter = const FilterCriteria();
+                _selectedFilter = 'All';
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.close, size: 12, color: Colors.redAccent),
+                  SizedBox(width: 4),
+                  Text(
+                    'Clear all',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLocationBanner() {
     if (_isLoadingLocation) {
       return Container(
@@ -672,7 +970,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.near_me,
                 label: 'Nearby',
                 active: _sortByDistance,
-                onTap: () => setState(() => _sortByDistance = !_sortByDistance),
+                onTap: () {
+                  setState(() {
+                    _sortByDistance = !_sortByDistance;
+                    _sortOption = SortOption.distance;
+                  });
+                },
               ),
             ],
           ),
@@ -681,7 +984,240 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ---- NEAR ME SECTION ----
+  Widget _buildFeaturedSection() {
+    final featured = _featuredListings;
+    if (featured.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_kGold, _kGoldLight],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Icon(Icons.auto_awesome, color: _kGold, size: 16),
+              const SizedBox(width: 6),
+              const Text(
+                'Featured',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _kGold,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'TOP',
+                  style: TextStyle(
+                    color: _kMaroon,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SeeAllListingsScreen(
+                        title: 'Featured Listings',
+                      ),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'See all →',
+                  style: TextStyle(
+                    color: _kGold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            itemCount: featured.length,
+            itemBuilder: (context, index) {
+              final listing = featured[index];
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ListingDetailScreen(
+                      listingData: listing.toDisplayMap(),
+                      listingId: listing.id,
+                    ),
+                  ),
+                ),
+                child: Container(
+                  width: 240,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                    colors: [
+                      _kCardBg,
+                      _kMaroonEnd.withValues(alpha: 0.4),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.35)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kGold.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: _kGold.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.workspace_premium,
+                                color: _kGold, size: 14),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              listing.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              size: 12, color: _kGold),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              listing.city,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: _kMutedText, fontSize: 11.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      if (listing.tag.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: _kMaroon.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            listing.tag,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing.rentDisplay,
+                                style: const TextStyle(
+                                  color: _kGoldLight,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                listing.period,
+                                style: const TextStyle(
+                                  color: _kMutedText,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _kGold,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'View',
+                              style: TextStyle(
+                                color: _kMaroon,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildNearMeSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -853,6 +1389,355 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildAllListingsHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 20,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_kGold, _kGoldLight],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text(
+            'All Listings',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _kBorder),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                color: _kGold,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _showSortBottomSheet(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _kBorder),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.swap_vert, color: _kGold, size: 14),
+                  const SizedBox(width: 5),
+                  Text(
+                    _sortLabel,
+                    style: const TextStyle(
+                      color: _kGold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SeeAllListingsScreen(),
+                ),
+              );
+            },
+            child: const Text(
+              'Grid →',
+              style: TextStyle(
+                color: _kGold,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _kSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _kBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Sort By',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 14),
+            ...SortOption.values.map((opt) {
+              String label;
+              IconData icon;
+              switch (opt) {
+                case SortOption.newest:
+                  label = 'Newest First';
+                  icon = Icons.schedule;
+                  break;
+                case SortOption.priceLow:
+                  label = 'Price: Low to High';
+                  icon = Icons.trending_up;
+                  break;
+                case SortOption.priceHigh:
+                  label = 'Price: High to Low';
+                  icon = Icons.trending_down;
+                  break;
+                case SortOption.distance:
+                  label = 'Nearest First';
+                  icon = Icons.near_me;
+                  break;
+              }
+              final selected = _sortOption == opt;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _sortOption = opt);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? _kGold.withValues(alpha: 0.12)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected ? _kGold : _kBorder,
+                        width: selected ? 1.2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          icon,
+                          color: selected ? _kGold : _kMutedText,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color:
+                                  selected ? _kGoldLight : Colors.white70,
+                              fontSize: 13.5,
+                              fontWeight: selected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (selected)
+                          const Icon(Icons.check_circle,
+                              color: _kGold, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.72,
+        ),
+        itemCount: 4,
+        itemBuilder: (_, __) => Container(
+          decoration: BoxDecoration(
+            color: _kCardBg,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _kGold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _kBorder),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _kGold.withValues(alpha: 0.12),
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                color: _kGold,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No listings found',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Try adjusting your search or filters',
+              style: TextStyle(color: _kMutedText, fontSize: 12.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                      _activeFilter = const FilterCriteria();
+                      _selectedFilter = 'All';
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _kMaroon,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Clear Filters'),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PostListingScreen(),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _kGold,
+                    side: BorderSide(color: _kGold),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Post Room'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  SliverList _buildListingsGrid(List<Listing> listings) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+              child: _ListingRow(listings: listings),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+        childCount: 1,
+      ),
+    );
+  }
+
   // ---- DRAWER ----
   Widget _buildDrawer() {
     final user = Supabase.instance.client.auth.currentUser;
@@ -918,7 +1803,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            // ---- Scrollable menu items ----
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -951,6 +1835,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      Icons.add_home_work_outlined,
+                      'Post a Listing',
+                      () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PostListingScreen(),
                           ),
                         );
                       },
@@ -1010,7 +1907,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // ---- Fixed bottom section ----
             const Divider(color: _kBorder, height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
@@ -1204,6 +2100,42 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ListingRow extends StatelessWidget {
+  final List<Listing> listings;
+  const _ListingRow({required this.listings});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = (listings.length / 2).ceil();
+    return Column(
+      children: List.generate(rows, (rowIdx) {
+        final start = rowIdx * 2;
+        final end = (start + 2).clamp(0, listings.length);
+        final pair = listings.sublist(start, end);
+        return Padding(
+          padding: EdgeInsets.only(bottom: rowIdx == rows - 1 ? 0 : 12),
+          child: Row(
+            children: [
+              Expanded(child: ListingCard(
+                data: pair[0].toDisplayMap(),
+                listingId: pair[0].id,
+              )),
+              if (pair.length == 2) ...[
+                const SizedBox(width: 12),
+                Expanded(child: ListingCard(
+                  data: pair[1].toDisplayMap(),
+                  listingId: pair[1].id,
+                )),
+              ] else
+                const Expanded(child: SizedBox.shrink()),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
