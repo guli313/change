@@ -17,7 +17,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('CreateProfileScreen initialized');
+    debugPrint('CreateProfileScreens initialized');
     _nameController.addListener(_logProfileState);
     _ageController.addListener(_logProfileState);
     _genderController.addListener(_logProfileState);
