@@ -28,7 +28,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     debugPrint(
       'CreateProfileScreen input -> name: ${_nameController.text}, '
       'age: ${_ageController.text}, gender: ${_genderController.text}, '
-      'religions: ${_religionController.text}',
+      'religion: ${_religionController.text}',
     );
   }
 
