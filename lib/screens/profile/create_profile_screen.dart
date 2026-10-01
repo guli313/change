@@ -26,7 +26,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
 
   void _logProfileState() {
     debugPrint(
-      'CreateProfileScreen input -> name: ${_nameController.text}, '
+      'CreateProfileScreen input -> names: ${_nameController.text}, '
       'age: ${_ageController.text}, gender: ${_genderController.text}, '
       'religion: ${_religionController.text}',
     );
@@ -62,7 +62,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           const SizedBox(height: 10),
           TextField(
             controller: _genderController,
-            decoration: const InputDecoration(labelText: 'Gender'),
+            decoration: const InputDecoration(labelText: 'Genders'),
           ),
           const SizedBox(height: 10),
           TextField(
