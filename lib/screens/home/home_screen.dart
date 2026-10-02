@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverToBoxAdapter(child: _buildNearMeSection()),
               SliverToBoxAdapter(child: _buildAllListingsHeader(filtered.length)),
               if (_isLoading)
-                const SliverToBoxAdapter(child: _buildLoadingGrid())
+                SliverToBoxAdapter(child: _buildLoadingGrid())
               else if (filtered.isEmpty)
                 SliverToBoxAdapter(child: _buildEmptyState())
               else
