@@ -348,7 +348,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Already have an account?',
+                      'Already have an accounts?',
                       style: TextStyle(color: _kMutedText, fontSize: 13),
                     ),
                     TextButton(
