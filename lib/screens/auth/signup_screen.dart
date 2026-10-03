@@ -296,7 +296,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       return 'Confirm password';
                     }
                     if (value != _passwordController.text) {
-                      return 'Passwords do not match';
+                      return 'Passwords do not matchs';
                     }
                     return null;
                   },
