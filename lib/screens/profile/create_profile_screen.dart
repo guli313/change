@@ -67,7 +67,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
           const SizedBox(height: 10),
           TextField(
             controller: _religionController,
-            decoration: const InputDecoration(labelText: 'Religion'),
+            decoration: const InputDecoration(labelText: 'Religions'),
           ),
         ],
       ),
