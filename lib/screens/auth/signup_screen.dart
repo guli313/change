@@ -359,7 +359,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: const Text(
-                        'Logins',
+                        'Login',
                         style: TextStyle(
                           color: _kGold,
                           fontSize: 13,
