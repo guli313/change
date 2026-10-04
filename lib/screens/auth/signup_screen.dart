@@ -333,7 +333,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                           )
                         : const Text(
-                            'Create Accounts',
+                            'Create Account',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white,
