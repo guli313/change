@@ -1018,6 +1018,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     final city = _userLocation!.cityName ?? 'Your Location';
+    final country = _userLocation!.countryName;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1046,7 +1047,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '📍 $city',
+                  '📍 $city${country != null ? ', $country' : ''}',
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
