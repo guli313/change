@@ -17,6 +17,7 @@ const Color _kError = Color(0xFFE07A7A);
 const Color _kSuccess = Color(0xFF6EC96A);
 
 const List<Map<String, String>> _kCities = [
+  // Pakistan
   {'city': 'Lahore', 'country': '🇵🇰'},
   {'city': 'Islamabad', 'country': '🇵🇰'},
   {'city': 'Karachi', 'country': '🇵🇰'},
@@ -27,6 +28,152 @@ const List<Map<String, String>> _kCities = [
   {'city': 'Quetta', 'country': '🇵🇰'},
   {'city': 'Gujranwala', 'country': '🇵🇰'},
   {'city': 'Sialkot', 'country': '🇵🇰'},
+  // UK
+  {'city': 'London', 'country': '🇬🇧'},
+  {'city': 'Manchester', 'country': '🇬🇧'},
+  {'city': 'Birmingham', 'country': '🇬🇧'},
+  {'city': 'Leeds', 'country': '🇬🇧'},
+  {'city': 'Edinburgh', 'country': '🇬🇧'},
+  {'city': 'Sheffield', 'country': '🇬🇧'},
+  {'city': 'Nottingham', 'country': '🇬🇧'},
+  // USA
+  {'city': 'New York', 'country': '🇺🇸'},
+  {'city': 'Los Angeles', 'country': '🇺🇸'},
+  {'city': 'Chicago', 'country': '🇺🇸'},
+  {'city': 'Houston', 'country': '🇺🇸'},
+  {'city': 'Boston', 'country': '🇺🇸'},
+  {'city': 'San Francisco', 'country': '🇺🇸'},
+  {'city': 'Seattle', 'country': '🇺🇸'},
+  {'city': 'Austin', 'country': '🇺🇸'},
+  // Canada
+  {'city': 'Toronto', 'country': '🇨🇦'},
+  {'city': 'Vancouver', 'country': '🇨🇦'},
+  {'city': 'Montreal', 'country': '🇨🇦'},
+  {'city': 'Calgary', 'country': '🇨🇦'},
+  // Australia
+  {'city': 'Melbourne', 'country': '🇦🇺'},
+  {'city': 'Sydney', 'country': '🇦🇺'},
+  {'city': 'Brisbane', 'country': '🇦🇺'},
+  {'city': 'Adelaide', 'country': '🇦🇺'},
+  {'city': 'Perth', 'country': '🇦🇺'},
+  // Middle East
+  {'city': 'Dubai', 'country': '🇦🇪'},
+  {'city': 'Abu Dhabi', 'country': '🇦🇪'},
+  {'city': 'Riyadh', 'country': '🇸🇦'},
+  {'city': 'Jeddah', 'country': '🇸🇦'},
+  {'city': 'Doha', 'country': '🇶🇦'},
+  {'city': 'Kuwait City', 'country': '🇰🇼'},
+  {'city': 'Muscat', 'country': '🇴🇲'},
+  // Europe
+  {'city': 'Berlin', 'country': '🇩🇪'},
+  {'city': 'Munich', 'country': '🇩🇪'},
+  {'city': 'Hamburg', 'country': '🇩🇪'},
+  {'city': 'Paris', 'country': '🇫🇷'},
+  {'city': 'Lyon', 'country': '🇫🇷'},
+  {'city': 'Amsterdam', 'country': '🇳🇱'},
+  {'city': 'Rotterdam', 'country': '🇳🇱'},
+  {'city': 'Barcelona', 'country': '🇪🇸'},
+  {'city': 'Madrid', 'country': '🇪🇸'},
+  {'city': 'Rome', 'country': '🇮🇹'},
+  {'city': 'Milan', 'country': '🇮🇹'},
+  {'city': 'Dublin', 'country': '🇮🇪'},
+  {'city': 'Lisbon', 'country': '🇵🇹'},
+  {'city': 'Stockholm', 'country': '🇸🇪'},
+  {'city': 'Oslo', 'country': '🇳🇴'},
+  {'city': 'Copenhagen', 'country': '🇩🇰'},
+  {'city': 'Helsinki', 'country': '🇫🇮'},
+  {'city': 'Warsaw', 'country': '🇵🇱'},
+  {'city': 'Prague', 'country': '🇨🇿'},
+  {'city': 'Budapest', 'country': '🇭🇺'},
+  {'city': 'Vienna', 'country': '🇦🇹'},
+  {'city': 'Zurich', 'country': '🇨🇭'},
+  {'city': 'Geneva', 'country': '🇨🇭'},
+  // East Asia
+  {'city': 'Tokyo', 'country': '🇯🇵'},
+  {'city': 'Osaka', 'country': '🇯🇵'},
+  {'city': 'Seoul', 'country': '🇰🇷'},
+  {'city': 'Beijing', 'country': '🇨🇳'},
+  {'city': 'Shanghai', 'country': '🇨🇳'},
+  {'city': 'Hong Kong', 'country': '🇭🇰'},
+  {'city': 'Singapore', 'country': '🇸🇬'},
+  {'city': 'Taipei', 'country': '🇹🇼'},
+  // Southeast Asia
+  {'city': 'Bangkok', 'country': '🇹🇭'},
+  {'city': 'Chiang Mai', 'country': '🇹🇭'},
+  {'city': 'Kuala Lumpur', 'country': '🇲🇾'},
+  {'city': 'Penang', 'country': '🇲🇾'},
+  {'city': 'Jakarta', 'country': '🇮🇩'},
+  {'city': 'Manila', 'country': '🇵🇭'},
+  {'city': 'Hanoi', 'country': '🇻🇳'},
+  {'city': 'Ho Chi Minh City', 'country': '🇻🇳'},
+  // South Asia
+  {'city': 'Delhi', 'country': '🇮🇳'},
+  {'city': 'Mumbai', 'country': '🇮🇳'},
+  {'city': 'Bangalore', 'country': '🇮🇳'},
+  {'city': 'Pune', 'country': '🇮🇳'},
+  {'city': 'Hyderabad', 'country': '🇮🇳'},
+  {'city': 'Chennai', 'country': '🇮🇳'},
+  {'city': 'Kolkata', 'country': '🇮🇳'},
+  {'city': 'Ahmedabad', 'country': '🇮🇳'},
+  {'city': 'Colombo', 'country': '🇱🇰'},
+  {'city': 'Kathmandu', 'country': '🇳🇵'},
+  {'city': 'Dhaka', 'country': '🇧🇩'},
+  // Africa
+  {'city': 'Cairo', 'country': '🇪🇬'},
+  {'city': 'Cape Town', 'country': '🇿🇦'},
+  {'city': 'Johannesburg', 'country': '🇿🇦'},
+  {'city': 'Nairobi', 'country': '🇰🇪'},
+  {'city': 'Lagos', 'country': '🇳🇬'},
+  {'city': 'Casablanca', 'country': '🇲🇦'},
+  // Latin America
+  {'city': 'São Paulo', 'country': '🇧🇷'},
+  {'city': 'Rio de Janeiro', 'country': '🇧🇷'},
+  {'city': 'Mexico City', 'country': '🇲🇽'},
+  {'city': 'Guadalajara', 'country': '🇲🇽'},
+  {'city': 'Bogotá', 'country': '🇨🇴'},
+  {'city': 'Santiago', 'country': '🇨🇱'},
+  {'city': 'Buenos Aires', 'country': '🇦🇷'},
+  {'city': 'Lima', 'country': '🇵🇪'},
+];
+
+// Worldwide currencies — ISO 4217 code with display info
+const List<Map<String, String>> _kCurrencies = [
+  {'code': 'USD', 'symbol': '\$',   'name': 'US Dollar'},
+  {'code': 'EUR', 'symbol': '€',    'name': 'Euro'},
+  {'code': 'GBP', 'symbol': '£',    'name': 'British Pound'},
+  {'code': 'PKR', 'symbol': 'Rs ',  'name': 'Pak Rupee'},
+  {'code': 'INR', 'symbol': '₹',    'name': 'Indian Rupee'},
+  {'code': 'AED', 'symbol': 'د.إ ', 'name': 'UAE Dirham'},
+  {'code': 'SAR', 'symbol': '﷼ ',   'name': 'Saudi Riyal'},
+  {'code': 'QAR', 'symbol': 'ر.ق ', 'name': 'Qatari Riyal'},
+  {'code': 'CAD', 'symbol': 'C\$',  'name': 'Canadian Dollar'},
+  {'code': 'AUD', 'symbol': 'A\$',  'name': 'Australian Dollar'},
+  {'code': 'SGD', 'symbol': 'S\$',  'name': 'Singapore Dollar'},
+  {'code': 'CHF', 'symbol': 'CHF ', 'name': 'Swiss Franc'},
+  {'code': 'JPY', 'symbol': '¥',    'name': 'Japanese Yen'},
+  {'code': 'CNY', 'symbol': '¥',    'name': 'Chinese Yuan'},
+  {'code': 'TRY', 'symbol': '₺',    'name': 'Turkish Lira'},
+  {'code': 'MYR', 'symbol': 'RM',   'name': 'Malaysian Ringgit'},
+  {'code': 'EGP', 'symbol': 'E£',   'name': 'Egyptian Pound'},
+  {'code': 'BDT', 'symbol': '৳',    'name': 'Bangla Taka'},
+  {'code': 'NPR', 'symbol': 'रू ',   'name': 'Nepali Rupee'},
+  {'code': 'LKR', 'symbol': 'රු ',   'name': 'Lankan Rupee'},
+  {'code': 'ZAR', 'symbol': 'R',    'name': 'South African Rand'},
+  {'code': 'BRL', 'symbol': 'R\$',  'name': 'Brazilian Real'},
+  {'code': 'MXN', 'symbol': 'Mex\$','name': 'Mexican Peso'},
+  {'code': 'SEK', 'symbol': 'kr ',  'name': 'Swedish Krona'},
+  {'code': 'NOK', 'symbol': 'kr ',  'name': 'Norwegian Krone'},
+  {'code': 'DKK', 'symbol': 'kr ',  'name': 'Danish Krone'},
+  {'code': 'PLN', 'symbol': 'zł ',  'name': 'Polish Złoty'},
+  {'code': 'HUF', 'symbol': 'Ft ',  'name': 'Hungarian Forint'},
+  {'code': 'CZK', 'symbol': 'Kč ',  'name': 'Czech Koruna'},
+  {'code': 'THB', 'symbol': '฿',    'name': 'Thai Baht'},
+  {'code': 'IDR', 'symbol': 'Rp ',  'name': 'Indo Rupiah'},
+  {'code': 'VND', 'symbol': '₫ ',   'name': 'Viet Đồng'},
+  {'code': 'PHP', 'symbol': '₱',    'name': 'Philippine Peso'},
+  {'code': 'KRW', 'symbol': '₩',    'name': 'Korean Won'},
+  {'code': 'HKD', 'symbol': 'HK\$', 'name': 'HK Dollar'},
+  {'code': 'NZD', 'symbol': 'NZ\$', 'name': 'New Zealand Dollar'},
 ];
 
 const List<String> _kRoomTypes = [
@@ -90,6 +237,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
   String _selectedCity = 'Lahore';
   String _roomType = 'Single Room';
   String _genderPref = 'Anyone';
+  String _selectedCurrency = 'USD';
   String _rentalPeriod = '/month';
   final Set<String> _selectedAmenities = {};
   XFile? _coverImage;
@@ -875,6 +1023,10 @@ class _PostListingScreenState extends State<PostListingScreen> {
   }
 
   Widget _buildRentRow() {
+    final symbol = _kCurrencies
+            .firstWhere((c) => c['code'] == _selectedCurrency,
+                orElse: () => _kCurrencies.first)['symbol'] ??
+        '\$';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -903,6 +1055,42 @@ class _PostListingScreenState extends State<PostListingScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Currency selector
+              Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: _kSurface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _kBorder),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCurrency,
+                    dropdownColor: _kSurface,
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: _kGold, size: 16),
+                    items: _kCurrencies
+                        .map((c) => DropdownMenuItem(
+                              value: c['code'],
+                              child: Text(
+                                '${c['symbol']} ${c['code']}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedCurrency = v);
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Amount field
               Expanded(
                 flex: 3,
                 child: TextFormField(
@@ -918,7 +1106,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
                     fillColor: _kSurface,
                     hintText: 'e.g. 25000',
                     hintStyle: const TextStyle(color: _kMuted, fontSize: 13),
-                    prefixText: 'PKR  ',
+                    prefixText: symbol,
                     prefixStyle: const TextStyle(
                       color: _kGold,
                       fontSize: 14,
@@ -951,40 +1139,38 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: _kSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kBorder),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _rentalPeriod,
-                      dropdownColor: _kSurface,
-                      icon: const Icon(Icons.keyboard_arrow_down,
-                          color: _kGold, size: 18),
-                      items: _kRentalPeriods
-                          .map((p) => DropdownMenuItem(
-                                value: p,
-                                child: Text(
-                                  p,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+              // Rental period
+              Container(
+                height: 50,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  color: _kSurface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _kBorder),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _rentalPeriod,
+                    dropdownColor: _kSurface,
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: _kGold, size: 18),
+                    items: _kRentalPeriods
+                        .map((p) => DropdownMenuItem(
+                              value: p,
+                              child: Text(
+                                p,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) setState(() => _rentalPeriod = v);
-                      },
-                      isExpanded: true,
-                    ),
+                              ),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _rentalPeriod = v);
+                    },
+                    isExpanded: false,
                   ),
                 ),
               ),

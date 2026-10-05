@@ -8,11 +8,15 @@ class UserLocation {
   final double latitude;
   final double longitude;
   final String? cityName;
+  final String? countryName;
+  final String? countryIsoCode;
 
   const UserLocation({
     required this.latitude,
     required this.longitude,
     this.cityName,
+    this.countryName,
+    this.countryIsoCode,
   });
 }
 
@@ -57,8 +61,10 @@ class LocationService {
         ),
       );
 
-      // Reverse geocode — lat/lng → city name
+      // Reverse geocode — lat/lng → city + country
       String? city;
+      String? country;
+      String? countryIso;
       try {
         final placemarks = await placemarkFromCoordinates(
           position.latitude,
@@ -67,6 +73,8 @@ class LocationService {
         if (placemarks.isNotEmpty) {
           final p = placemarks.first;
           city = p.locality ?? p.subAdministrativeArea ?? p.administrativeArea;
+          country = p.country;
+          countryIso = p.isoCountryCode;
         }
       } catch (_) {
         // Geocoding fail hua to city null rahega — koi baat nahi
@@ -76,6 +84,8 @@ class LocationService {
         latitude: position.latitude,
         longitude: position.longitude,
         cityName: city,
+        countryName: country,
+        countryIsoCode: countryIso,
       );
       _lastFetch = DateTime.now();
       return _cachedLocation;

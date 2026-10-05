@@ -1,11 +1,56 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Worldwide currency support — ISO 4217 codes + symbols
+const Map<String, String> _kCurrencySymbols = {
+  'USD': '\$',
+  'EUR': '€',
+  'GBP': '£',
+  'PKR': 'Rs ',
+  'INR': '₹',
+  'AED': 'د.إ',
+  'SAR': '﷼',
+  'QAR': 'ر.ق',
+  'CAD': 'C\$',
+  'AUD': 'A\$',
+  'SGD': 'S\$',
+  'CHF': 'CHF ',
+  'JPY': '¥',
+  'CNY': '¥',
+  'TRY': '₺',
+  'MYR': 'RM',
+  'EGP': 'E£',
+  'BDT': '৳',
+  'NPR': 'रू',
+  'LKR': 'රු',
+  'ZAR': 'R',
+  'BRL': 'R\$',
+  'MXN': 'Mex\$',
+  'SEK': 'kr',
+  'NOK': 'kr',
+  'DKK': 'kr',
+  'PLN': 'zł',
+  'HUF': 'Ft',
+  'CZK': 'Kč',
+  'THB': '฿',
+  'IDR': 'Rp',
+  'VND': '₫',
+  'PHP': '₱',
+  'KRW': '₩',
+  'HKD': 'HK\$',
+  'NZD': 'NZ\$',
+};
+
+/// Default currency fallback if none provided
+const String _kDefaultCurrency = 'USD';
+
 class Listing {
   final String id;
   final String title;
   final String city;
+  final String? country;
   final int rent;
+  final String currency;
   final String period;
   final String tag;
   final String? description;
@@ -13,15 +58,18 @@ class Listing {
   final String? userId;
   final DateTime? createdAt;
   final bool isFeatured;
+  final double? latitude;
+  final double? longitude;
 
-  /// User se distance (km mein) — nullable hai agar location nahi mili
   final double? distanceKm;
 
   const Listing({
     required this.id,
     required this.title,
     required this.city,
+    this.country,
     required this.rent,
+    this.currency = _kDefaultCurrency,
     this.period = '/month',
     this.tag = '',
     this.description,
@@ -29,6 +77,8 @@ class Listing {
     this.userId,
     this.createdAt,
     this.isFeatured = false,
+    this.latitude,
+    this.longitude,
     this.distanceKm,
   });
 
@@ -37,9 +87,11 @@ class Listing {
       id: map['id']?.toString() ?? '',
       title: map['title']?.toString() ?? '',
       city: map['city']?.toString() ?? '',
+      country: map['country']?.toString(),
       rent: map['rent'] is int
           ? map['rent']
           : int.tryParse(map['rent']?.toString() ?? '0') ?? 0,
+      currency: map['currency']?.toString() ?? _kDefaultCurrency,
       period: map['period']?.toString() ?? '/month',
       tag: map['tag']?.toString() ?? '',
       description: map['description']?.toString(),
@@ -49,6 +101,12 @@ class Listing {
           ? DateTime.tryParse(map['created_at'].toString())
           : null,
       isFeatured: map['is_featured'] == true,
+      latitude: map['latitude'] != null
+          ? double.tryParse(map['latitude'].toString())
+          : null,
+      longitude: map['longitude'] != null
+          ? double.tryParse(map['longitude'].toString())
+          : null,
     );
   }
 
@@ -56,27 +114,41 @@ class Listing {
     return {
       'title': title,
       'city': city,
+      'country': country,
       'rent': rent,
+      'currency': currency,
       'period': period,
       'tag': tag,
       'description': description,
       'image_url': imageUrl,
       'user_id': userId,
       'is_featured': isFeatured,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
-  String get rentDisplay => 'PKR ${rent.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (Match m) => '${m[1]},',
-      )}';
+  /// Returns the currency symbol for this listing — falls back to ISO code
+  String get _currencySymbol =>
+      _kCurrencySymbols[currency.toUpperCase()] ?? '${currency.toUpperCase()} ';
+
+  /// Smart rent formatter — respects locale number formatting + currency symbol
+  String get rentDisplay {
+    final formatted = rent.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+    return '$_currencySymbol$formatted';
+  }
 
   Map<String, String> toDisplayMap() {
     return {
       'id': id,
       'title': title,
       'city': city,
+      'country': country ?? '',
       'rent': rentDisplay,
+      'currency': currency,
       'period': period,
       'tag': tag,
       'description': description ?? '',
@@ -85,13 +157,14 @@ class Listing {
     };
   }
 
-  /// Distance ke sath naya Listing object banata hai
   Listing withDistance(double km) {
     return Listing(
       id: id,
       title: title,
       city: city,
+      country: country,
       rent: rent,
+      currency: currency,
       period: period,
       tag: tag,
       description: description,
@@ -99,6 +172,8 @@ class Listing {
       userId: userId,
       createdAt: createdAt,
       isFeatured: isFeatured,
+      latitude: latitude,
+      longitude: longitude,
       distanceKm: km,
     );
   }
@@ -110,6 +185,8 @@ class ListingsService {
   static Future<List<Listing>> fetchListings({
     String? searchQuery,
     String? city,
+    String? country,
+    String? currency,
     int? maxBudget,
     String? tag,
     bool? featured,
@@ -121,11 +198,17 @@ class ListingsService {
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
         filterQuery = filterQuery.or(
-          'title.ilike.%$searchQuery%,city.ilike.%$searchQuery%,tag.ilike.%$searchQuery%',
+          'title.ilike.%$searchQuery%,city.ilike.%$searchQuery%,country.ilike.%$searchQuery%,tag.ilike.%$searchQuery%',
         );
       }
       if (city != null && city.isNotEmpty) {
         filterQuery = filterQuery.ilike('city', '%$city%');
+      }
+      if (country != null && country.isNotEmpty) {
+        filterQuery = filterQuery.ilike('country', '%$country%');
+      }
+      if (currency != null && currency.isNotEmpty) {
+        filterQuery = filterQuery.ilike('currency', '%$currency%');
       }
       if (maxBudget != null) {
         filterQuery = filterQuery.lte('rent', maxBudget);
@@ -164,6 +247,10 @@ class ListingsService {
 
   static Future<List<Listing>> fetchByCity(String city) async {
     return fetchListings(city: city);
+  }
+
+  static Future<List<Listing>> fetchByCountry(String country) async {
+    return fetchListings(country: country);
   }
 
   static Future<List<Listing>> fetchFeatured() async {
