@@ -221,6 +221,40 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  TileLayer _buildTileLayer() {
+    switch (_mapStyle) {
+      case MapStyle.openStreetMap:
+        return TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.roommate_finder',
+          maxZoom: 19,
+        );
+      case MapStyle.dark:
+        return TileLayer(
+          urlTemplate:
+              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.example.roommate_finder',
+          retinaMode: true,
+          maxZoom: 19,
+        );
+      case MapStyle.satellite:
+        return TileLayer(
+          urlTemplate:
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          userAgentPackageName: 'com.example.roommate_finder',
+          maxZoom: 19,
+        );
+      case MapStyle.streets:
+        return TileLayer(
+          urlTemplate:
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+          userAgentPackageName: 'com.example.roommate_finder',
+          maxZoom: 19,
+        );
+    }
+  }
+
   Widget _buildMap() {
     LatLng center = const LatLng(31.5204, 74.3587);
     double zoom = 10.0;
@@ -235,17 +269,11 @@ class _MapScreenState extends State<MapScreen> {
       options: MapOptions(
         initialCenter: center,
         initialZoom: zoom,
-        minZoom: 5.0,
-        maxZoom: 18.0,
+        minZoom: 3.0,
+        maxZoom: 19.0,
       ),
       children: [
-        TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-          subdomains: const ['a', 'b', 'c', 'd'],
-          userAgentPackageName: 'com.example.roommate_finder',
-          retinaMode: true,
-        ),
+        _buildTileLayer(),
         if (_userLocation != null)
           CircleLayer(
             circles: [
@@ -321,6 +349,19 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               GestureDetector(
+                onTap: _showMapStyleSheet,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.layers_outlined,
+                      color: _kGold, size: 20),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
                 onTap: _loadLocation,
                 child: Container(
                   padding: const EdgeInsets.all(8),
@@ -334,6 +375,136 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showMapStyleSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _kSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _kBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.map, color: _kGold, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Choose Free Map Layer',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Select any free map provider (No API key required)',
+              style: TextStyle(color: _kMutedText, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            _buildStyleTile(
+              style: MapStyle.openStreetMap,
+              title: 'OpenStreetMap (Default)',
+              subtitle: '100% Free & Open-source standard world map',
+              icon: Icons.public,
+            ),
+            _buildStyleTile(
+              style: MapStyle.dark,
+              title: 'CartoDB Dark Matter',
+              subtitle: 'Free sleek dark-mode basemap',
+              icon: Icons.dark_mode,
+            ),
+            _buildStyleTile(
+              style: MapStyle.streets,
+              title: 'Esri World Street Map',
+              subtitle: 'Free high-resolution street & city details',
+              icon: Icons.alt_route,
+            ),
+            _buildStyleTile(
+              style: MapStyle.satellite,
+              title: 'Esri World Imagery (Satellite)',
+              subtitle: 'Free aerial satellite imagery view',
+              icon: Icons.satellite_alt,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStyleTile({
+    required MapStyle style,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    final isSelected = _mapStyle == style;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _mapStyle = style);
+        Navigator.pop(context);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: isSelected ? _kGold.withValues(alpha: 0.15) : _kCardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? _kGold : _kBorder,
+            width: isSelected ? 1.4 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? _kGold : _kMutedText, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? _kGoldLight : Colors.white,
+                      fontSize: 13.5,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: _kMutedText, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: _kGold, size: 18),
+          ],
         ),
       ),
     );
