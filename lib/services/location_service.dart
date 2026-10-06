@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 /// User ki current GPS position
 class UserLocation {
@@ -123,6 +125,31 @@ class LocationService {
         // Geocoding fail hua to city null rahega
       }
 
+      // Free OpenStreetMap Nominatim Reverse Geocoding API
+      if (city == null) {
+        try {
+          final uri = Uri.parse(
+            'https://nominatim.openstreetmap.org/reverse?lat=${position.latitude}&lon=${position.longitude}&format=json',
+          );
+          final res = await http.get(uri, headers: {
+            'User-Agent': 'RoommateFinderApp/1.0',
+          }).timeout(const Duration(seconds: 4));
+          if (res.statusCode == 200) {
+            final Map<String, dynamic> data = jsonDecode(res.body);
+            final address = data['address'] as Map<String, dynamic>?;
+            if (address != null) {
+              city = address['city']?.toString() ??
+                  address['town']?.toString() ??
+                  address['suburb']?.toString() ??
+                  address['county']?.toString() ??
+                  address['state']?.toString();
+              country = address['country']?.toString();
+              countryIso = address['country_code']?.toString();
+            }
+          }
+        } catch (_) {}
+      }
+
       // Web ya missing city fallback ke liye nearest known city dhundo
       if (city == null) {
         String? closestCity;
@@ -213,6 +240,28 @@ class LocationService {
         return entry.value;
       }
     }
+
+    // Free OpenStreetMap Nominatim Geocoding API
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(cityName)}&format=json&limit=1',
+      );
+      final res = await http.get(uri, headers: {
+        'User-Agent': 'RoommateFinderApp/1.0',
+      }).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+        if (data.isNotEmpty) {
+          final lat = double.tryParse(data[0]['lat'].toString());
+          final lon = double.tryParse(data[0]['lon'].toString());
+          if (lat != null && lon != null) {
+            final geo = GeoResult(latitude: lat, longitude: lon);
+            _geoCache[key] = geo;
+            return geo;
+          }
+        }
+      }
+    } catch (_) {}
 
     if (!kIsWeb) {
       try {
