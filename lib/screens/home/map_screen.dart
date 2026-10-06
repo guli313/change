@@ -16,6 +16,13 @@ const Color _kMaroonEnd = Color(0xFF4E1220);
 const Color _kMutedText = Color(0xFF9B9B9B);
 const Color _kBorder = Color(0xFF2A2626);
 
+enum MapStyle {
+  openStreetMap,
+  dark,
+  satellite,
+  streets,
+}
+
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -39,6 +46,7 @@ class _MapScreenState extends State<MapScreen> {
   Listing? _selectedListing;
   int _radiusKm = 50;
   final List<int> _radiusOptions = [5, 10, 20, 50, 100, 200];
+  MapStyle _mapStyle = MapStyle.openStreetMap;
 
   @override
   void initState() {
