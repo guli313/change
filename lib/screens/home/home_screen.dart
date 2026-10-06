@@ -192,6 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _showSortSheet = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
 
   String _userName = 'Guest';
   List<Listing> _listings = [];
@@ -206,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingNearby = false;
   int _radiusKm = 25;
 
-  static const List<int> _kRadiusOptions = [5, 10, 25, 50, 100];
+  static const List<int> _kRadiusOptions = [5, 10, 25, 50, 100, 0];
 
   final List<String> _filters = const [
     'All',
@@ -237,6 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -412,10 +414,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return l.distanceKm! <= _activeFilter.radiusKm;
       }).toList();
     } else if (_userLocation != null && _sortByDistance) {
-      result = result.where((l) {
-        if (l.distanceKm == null) return false;
-        return l.distanceKm! <= _radiusKm;
-      }).toList();
+      if (_radiusKm > 0) {
+        result = result.where((l) {
+          if (l.distanceKm == null) return false;
+          return l.distanceKm! <= _radiusKm;
+        }).toList();
+      }
     }
 
     switch (_sortOption) {
@@ -502,6 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ]);
           },
           child: CustomScrollView(
+            controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(child: _buildHeader()),
               SliverToBoxAdapter(child: _buildHeroCTA()),
@@ -702,13 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () async {
-                      if (_userLocation == null) {
-                        LocationService.clearCache();
-                        await _loadLocation();
-                      }
-                      _searchFocusNode.requestFocus();
-                    },
+                    onTap: _onFindRoomTapped,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -724,18 +723,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.search, color: _kMaroon, size: 22),
+                          const Icon(Icons.radar, color: _kMaroon, size: 22),
                           const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              if (_userLocation == null)
+                              if (_isLoadingLocation)
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 5),
+                                  child: SizedBox(
+                                    width: 11,
+                                    height: 11,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: _kMaroon,
+                                    ),
+                                  ),
+                                )
+                              else if (_userLocation == null)
                                 const Padding(
                                   padding: EdgeInsets.only(right: 4),
                                   child: Icon(Icons.location_searching,
                                       color: _kMaroon, size: 12),
                                 ),
-                              Text(
+                              const Text(
                                 'Find a Room',
                                 style: TextStyle(
                                   color: _kMaroon,
@@ -744,6 +755,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _userLocation != null
+                                ? 'Near ${_userLocation!.cityName ?? 'You'} (${_radiusKm > 0 ? '$_radiusKm km' : 'All'})'
+                                : 'Near Your Diameter',
+                            style: TextStyle(
+                              color: _kMaroon.withValues(alpha: 0.75),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -1281,8 +1303,10 @@ class _HomeScreenState extends State<HomeScreen> {
           final selected = _radiusKm == km;
           final count = _listings.where((l) {
             if (l.distanceKm == null) return false;
+            if (km == 0) return true;
             return l.distanceKm! <= km;
           }).length;
+          final label = km == 0 ? 'All' : '$km km';
           return GestureDetector(
             onTap: () {
               setState(() {
@@ -1322,7 +1346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    '$km km',
+                    label,
                     style: TextStyle(
                       color: selected ? _kMaroon : Colors.white,
                       fontSize: 12.5,
@@ -1785,6 +1809,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAllListingsHeader(int count) {
+    final title = _sortByDistance
+        ? (_radiusKm > 0 ? 'Rooms Near You ($_radiusKm km)' : 'Nearest Rooms First')
+        : 'All Listings';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
       child: Row(
@@ -1802,9 +1830,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          const Text(
-            'All Listings',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -1827,6 +1855,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          if (_sortByDistance) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _showDiameterSelectorBottomSheet,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _kGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _kGold.withValues(alpha: 0.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.track_changes, color: _kGold, size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      _radiusKm > 0 ? '$_radiusKm km' : 'All',
+                      style: const TextStyle(
+                        color: _kGold,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
           GestureDetector(
             onTap: () => _showSortBottomSheet(),
@@ -1875,6 +1932,562 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _onFindRoomTapped() async {
+    if (_userLocation == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: _kGold),
+                ),
+                SizedBox(width: 10),
+                Text('Detecting your location...'),
+              ],
+            ),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+      await _loadLocation();
+    }
+
+    if (!mounted) return;
+
+    if (_userLocation == null) {
+      _showCityAndDiameterSelectorSheet();
+      return;
+    }
+
+    await _computeDistances();
+    if (!mounted) return;
+
+    _showDiameterSelectorBottomSheet();
+  }
+
+  void _scrollToResults() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        380,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _showDiameterSelectorBottomSheet() {
+    int selectedKm = _radiusKm;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _kSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final locCity = _userLocation?.cityName ?? 'Your Location';
+            final locCountry = _userLocation?.countryName ?? '';
+            final count = _listings.where((l) {
+              if (l.distanceKm == null) return false;
+              if (selectedKm == 0) return true;
+              return l.distanceKm! <= selectedKm;
+            }).length;
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: _kBorder,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _kGold.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.radar, color: _kGold, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Find Rooms Near You',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Filter rooms by distance diameter (radius)',
+                              style: TextStyle(color: _kMutedText, fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: _kMutedText, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _kCardBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kGold.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: _kGold, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Current Location',
+                                style: TextStyle(color: _kMutedText, fontSize: 10),
+                              ),
+                              Text(
+                                '$locCity${locCountry.isNotEmpty ? ', $locCountry' : ''}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _showCityAndDiameterSelectorSheet();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: _kGold,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                          ),
+                          child: const Text('Change City', style: TextStyle(fontSize: 11.5)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Select Search Diameter',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _kGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$count rooms found',
+                          style: const TextStyle(
+                            color: _kGold,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final km in [5, 10, 25, 50, 100, 0]) ...[
+                        Builder(builder: (c) {
+                          final isSelected = selectedKm == km;
+                          final chipCount = _listings.where((l) {
+                            if (l.distanceKm == null) return false;
+                            if (km == 0) return true;
+                            return l.distanceKm! <= km;
+                          }).length;
+                          final label = km == 0 ? 'All' : '$km km';
+
+                          return GestureDetector(
+                            onTap: () {
+                              setSheetState(() => selectedKm = km);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: isSelected ? _kGold : _kSurface,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected ? _kGoldLight : _kBorder,
+                                  width: isSelected ? 1.4 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: _kGold.withValues(alpha: 0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.track_changes,
+                                    size: 13,
+                                    color: isSelected ? _kBackground : _kGold,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    label,
+                                    style: TextStyle(
+                                      color: isSelected ? _kBackground : Colors.white,
+                                      fontSize: 12.5,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? _kBackground.withValues(alpha: 0.2)
+                                          : _kGold.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '$chipCount',
+                                      style: TextStyle(
+                                        color: isSelected ? _kBackground : _kGold,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: count > 0
+                          ? _kGold.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: count > 0
+                            ? _kGold.withValues(alpha: 0.25)
+                            : Colors.orange.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          count > 0 ? Icons.check_circle_outline : Icons.info_outline,
+                          color: count > 0 ? _kGold : Colors.orangeAccent,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            count > 0
+                                ? 'Showing $count rooms within ${selectedKm == 0 ? 'all distances' : '$selectedKm km'}'
+                                : 'No rooms within $selectedKm km. Try expanding to 50 km or 100 km.',
+                            style: TextStyle(
+                              color: count > 0 ? _kGoldLight : Colors.orangeAccent,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (c) => const MapScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.map_outlined, size: 16),
+                          label: const Text('View on Map'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _kGold,
+                            side: const BorderSide(color: _kGold),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            setState(() {
+                              _radiusKm = selectedKm;
+                              _sortByDistance = true;
+                              _sortOption = SortOption.distance;
+                            });
+                            _scrollToResults();
+                          },
+                          icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                          label: Text(
+                            count > 0 ? 'Show $count Rooms' : 'Show Results',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _kGold,
+                            foregroundColor: _kBackground,
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCityAndDiameterSelectorSheet() {
+    String selectedCity = _userLocation?.cityName ?? 'Lahore';
+    int selectedRadius = _radiusKm;
+
+    const topCities = [
+      'Lahore',
+      'Karachi',
+      'Islamabad',
+      'Rawalpindi',
+      'Faisalabad',
+      'Multan',
+      'Peshawar',
+      'Sialkot',
+      'Gujranwala',
+      'London',
+      'New York',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _kSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: _kBorder,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Row(
+                    children: [
+                      Icon(Icons.location_city, color: _kGold, size: 22),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Select Your City & Diameter',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Pick your city to see rooms within your preferred diameter:',
+                    style: TextStyle(color: _kMutedText, fontSize: 12),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Popular Cities:',
+                    style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final c in topCities) ...[
+                        ChoiceChip(
+                          label: Text(c),
+                          selected: selectedCity.toLowerCase() == c.toLowerCase(),
+                          selectedColor: _kGold,
+                          backgroundColor: _kCardBg,
+                          labelStyle: TextStyle(
+                            color: selectedCity.toLowerCase() == c.toLowerCase()
+                                ? _kBackground
+                                : Colors.white70,
+                            fontWeight: selectedCity.toLowerCase() == c.toLowerCase()
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              setSheetState(() => selectedCity = c);
+                            }
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Search Diameter (Radius):',
+                    style: TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final km in [5, 10, 25, 50, 100, 0]) ...[
+                        ChoiceChip(
+                          label: Text(km == 0 ? 'All' : '$km km'),
+                          selected: selectedRadius == km,
+                          selectedColor: _kGold,
+                          backgroundColor: _kCardBg,
+                          labelStyle: TextStyle(
+                            color: selectedRadius == km ? _kBackground : Colors.white70,
+                            fontWeight: selectedRadius == km ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          onSelected: (val) {
+                            if (val) {
+                              setSheetState(() => selectedRadius = km);
+                            }
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        final loc = LocationService.setManualLocation(selectedCity);
+                        setState(() {
+                          _userLocation = loc;
+                          _locationDenied = false;
+                          _radiusKm = selectedRadius;
+                          _sortByDistance = true;
+                          _sortOption = SortOption.distance;
+                        });
+                        await _computeDistances();
+                        _scrollToResults();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _kGold,
+                        foregroundColor: _kBackground,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Show Rooms Near $selectedCity',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -2023,6 +2636,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isDistanceFiltered = _sortByDistance && _userLocation != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: Container(
@@ -2040,71 +2654,125 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: BoxShape.circle,
                 color: _kGold.withValues(alpha: 0.12),
               ),
-              child: const Icon(
-                Icons.search_off_rounded,
+              child: Icon(
+                isDistanceFiltered ? Icons.radar_outlined : Icons.search_off_rounded,
                 color: _kGold,
                 size: 36,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'No listings found',
-              style: TextStyle(
+            Text(
+              isDistanceFiltered
+                  ? 'No rooms within ${_radiusKm > 0 ? '$_radiusKm km' : 'this area'}'
+                  : 'No listings found',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Try adjusting your search or filters',
-              style: TextStyle(color: _kMutedText, fontSize: 12.5),
+            Text(
+              isDistanceFiltered
+                  ? 'Try expanding search diameter or selecting another city near ${_userLocation?.cityName ?? 'you'}.'
+                  : 'Try adjusting your search or filters',
+              style: const TextStyle(color: _kMutedText, fontSize: 12.5),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                      _activeFilter = const FilterCriteria();
-                      _selectedFilter = 'All';
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _kMaroon,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+            if (isDistanceFiltered) ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _radiusKm = 50;
+                      });
+                      _computeDistances();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _kGold,
+                      side: const BorderSide(color: _kGold),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     ),
+                    child: const Text('Try 50 km'),
                   ),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Clear Filters'),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PostListingScreen(),
+                  OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _radiusKm = 100;
+                      });
+                      _computeDistances();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _kGold,
+                      side: const BorderSide(color: _kGold),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    ),
+                    child: const Text('Try 100 km'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _radiusKm = 0; // Show all distances
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kGold,
+                      foregroundColor: _kBackground,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    ),
+                    child: const Text('Show All Distances'),
+                  ),
+                ],
+              ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _searchController.clear();
+                        _searchQuery = '';
+                        _activeFilter = const FilterCriteria();
+                        _selectedFilter = 'All';
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kMaroon,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _kGold,
-                    side: BorderSide(color: _kGold),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
                     ),
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Clear Filters'),
                   ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PostListingScreen(),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _kGold,
+                      side: const BorderSide(color: _kGold),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Post Room'),
                 ),
