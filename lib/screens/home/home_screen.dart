@@ -189,7 +189,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedFilter = 'All';
   FilterCriteria _activeFilter = const FilterCriteria();
   SortOption _sortOption = SortOption.newest;
-  bool _showSortSheet = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
