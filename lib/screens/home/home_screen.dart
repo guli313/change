@@ -31,8 +31,10 @@ const List<Map<String, String>> _kSampleListings = [
   {
     'id': 'sample_1',
     'title': '2 Bed Apartment',
-    'city': 'DHA Phase 5, Lahore',
+    'city': 'Lahore',
+    'country': 'Pakistan',
     'rent': 'PKR 25,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': 'Female Only',
     'description': 'Spacious 2-bedroom apartment in DHA Phase 5, Lahore. Furnished with all basic amenities.',
@@ -41,8 +43,10 @@ const List<Map<String, String>> _kSampleListings = [
   {
     'id': 'sample_2',
     'title': '1 Room Available',
-    'city': 'Johar Town, Lahore',
+    'city': 'Lahore',
+    'country': 'Pakistan',
     'rent': 'PKR 15,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': '',
     'description': 'A clean single room available in Johar Town. Near market and public transport.',
@@ -52,7 +56,9 @@ const List<Map<String, String>> _kSampleListings = [
     'id': 'sample_3',
     'title': 'Room near FAST',
     'city': 'Islamabad',
+    'country': 'Pakistan',
     'rent': 'PKR 18,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': 'Male Only',
     'description': 'Room available near FAST University campus. Ideal for students.',
@@ -62,7 +68,9 @@ const List<Map<String, String>> _kSampleListings = [
     'id': 'sample_4',
     'title': 'Shared Room, DHA',
     'city': 'Karachi',
+    'country': 'Pakistan',
     'rent': 'PKR 22,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': '',
     'description': 'Shared room in DHA Karachi with modern facilities.',
@@ -71,8 +79,10 @@ const List<Map<String, String>> _kSampleListings = [
   {
     'id': 'sample_5',
     'title': 'Furnished Studio',
-    'city': 'Gulberg, Lahore',
+    'city': 'Lahore',
+    'country': 'Pakistan',
     'rent': 'PKR 30,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': 'Female Only',
     'description': 'Fully furnished studio apartment in Gulberg III. All utilities included.',
@@ -81,12 +91,86 @@ const List<Map<String, String>> _kSampleListings = [
   {
     'id': 'sample_6',
     'title': 'Hostel Room',
-    'city': 'F-8, Islamabad',
+    'city': 'Islamabad',
+    'country': 'Pakistan',
     'rent': 'PKR 12,000',
+    'currency': 'PKR',
     'period': '/month',
     'tag': 'Male Only',
     'description': 'Shared hostel room near F-8 Markaz. WiFi and meals included.',
     'roomType': 'Hostel',
+  },
+  {
+    'id': 'sample_7',
+    'title': 'Room near UET',
+    'city': 'Sheikhupura',
+    'country': 'Pakistan',
+    'rent': 'PKR 11,000',
+    'currency': 'PKR',
+    'period': '/month',
+    'tag': 'Male Only',
+    'description': 'Affordable room for students. Near Sheikhupura main highway to Lahore.',
+    'roomType': 'Single Room',
+  },
+  {
+    'id': 'sample_8',
+    'title': 'Furnished Room',
+    'city': 'Gujranwala',
+    'country': 'Pakistan',
+    'rent': 'PKR 16,000',
+    'currency': 'PKR',
+    'period': '/month',
+    'tag': 'Female Only',
+    'description': 'Furnished room in Gujranwala Satellite Town. Safe family area.',
+    'roomType': 'Single Room',
+  },
+  {
+    'id': 'sample_9',
+    'title': 'Shared Flat',
+    'city': 'Kasur',
+    'country': 'Pakistan',
+    'rent': 'PKR 9,500',
+    'currency': 'PKR',
+    'period': '/month',
+    'tag': '',
+    'description': 'Shared flat on Kasur-Lahore road. Easy commute to Lahore.',
+    'roomType': 'Shared Room',
+  },
+  {
+    'id': 'sample_10',
+    'title': 'Studio near Airport',
+    'city': 'Sialkot',
+    'country': 'Pakistan',
+    'rent': 'PKR 19,000',
+    'currency': 'PKR',
+    'period': '/month',
+    'tag': '',
+    'description': 'Cozy studio near Sialkot International Airport.',
+    'roomType': 'Studio',
+  },
+  {
+    'id': 'sample_11',
+    'title': 'Central London Flat',
+    'city': 'London',
+    'country': 'United Kingdom',
+    'rent': '£1,400',
+    'currency': 'GBP',
+    'period': '/month',
+    'tag': 'Female Only',
+    'description': 'Modern 2-bed flat in Zone 2 Central London. 10 min walk to tube station.',
+    'roomType': 'Apartment',
+  },
+  {
+    'id': 'sample_12',
+    'title': 'Brooklyn Shared Room',
+    'city': 'New York',
+    'country': 'United States',
+    'rent': '\$950',
+    'currency': 'USD',
+    'period': '/month',
+    'tag': '',
+    'description': 'Shared room in Brooklyn. 15 min subway to Manhattan. Utilities included.',
+    'roomType': 'Shared Room',
   },
 ];
 
@@ -120,6 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _sortByDistance = false;
   List<Listing> _nearbyListings = [];
   bool _isLoadingNearby = false;
+  int _radiusKm = 25;
+
+  static const List<int> _kRadiusOptions = [5, 10, 25, 50, 100];
 
   final List<String> _filters = const [
     'All',
@@ -234,32 +321,50 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    final nearby = withDist
-        .where((l) => l.distanceKm != null)
+    final withinRadius = withDist
+        .where((l) => l.distanceKm != null && l.distanceKm! <= _radiusKm)
         .toList()
       ..sort((a, b) => a.distanceKm!.compareTo(b.distanceKm!));
 
+    final allSorted = withDist
+      ..sort((a, b) {
+        final da = a.distanceKm;
+        final db = b.distanceKm;
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da.compareTo(db);
+      });
+
     if (mounted) {
       setState(() {
-        _listings = withDist;
-        _nearbyListings = nearby.take(6).toList();
+        _listings = allSorted;
+        _nearbyListings = withinRadius;
         _isLoadingNearby = false;
       });
     }
   }
 
   List<Listing> _buildSampleListings() {
-    return _kSampleListings.map((m) => Listing.fromMap({
-      'id': m['id'],
-      'title': m['title'],
-      'city': m['city'],
-      'rent': int.tryParse(m['rent']?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0') ?? 0,
-      'period': m['period'],
-      'tag': m['tag'],
-      'description': m['description'],
-      'created_at': DateTime.now().subtract(Duration(hours: _kSampleListings.indexOf(m) * 6)).toIso8601String(),
-      'is_featured': m['id'] == 'sample_1' || m['id'] == 'sample_5',
-    })).toList();
+    return _kSampleListings.map((m) {
+      final rawRent = m['rent']?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0';
+      final rentNum = int.tryParse(rawRent) ?? 0;
+      final isFeatured = m['id'] == 'sample_1' || m['id'] == 'sample_5';
+      final hoursAgo = _kSampleListings.indexOf(m) * 6;
+      return Listing.fromMap({
+        'id': m['id'],
+        'title': m['title'],
+        'city': m['city'],
+        'country': m['country'],
+        'rent': rentNum,
+        'currency': m['currency'] ?? 'USD',
+        'period': m['period'],
+        'tag': m['tag'],
+        'description': m['description'],
+        'created_at': DateTime.now().subtract(Duration(hours: hoursAgo)).toIso8601String(),
+        'is_featured': isFeatured,
+      });
+    }).toList();
   }
 
   List<Listing> get _filteredListings {
@@ -270,6 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final q = _searchQuery.toLowerCase();
         return l.title.toLowerCase().contains(q) ||
             l.city.toLowerCase().contains(q) ||
+            (l.country ?? '').toLowerCase().contains(q) ||
             (l.description ?? '').toLowerCase().contains(q) ||
             l.tag.toLowerCase().contains(q);
       }).toList();
@@ -304,6 +410,11 @@ class _HomeScreenState extends State<HomeScreen> {
       result = result.where((l) {
         if (l.distanceKm == null) return false;
         return l.distanceKm! <= _activeFilter.radiusKm;
+      }).toList();
+    } else if (_userLocation != null && _sortByDistance) {
+      result = result.where((l) {
+        if (l.distanceKm == null) return false;
+        return l.distanceKm! <= _radiusKm;
       }).toList();
     }
 
@@ -383,8 +494,12 @@ class _HomeScreenState extends State<HomeScreen> {
           color: _kGold,
           backgroundColor: _kSurface,
           onRefresh: () async {
-            await _loadListings();
+            LocationService.clearCache();
             _loadUserName();
+            await Future.wait([
+              _loadListings(),
+              _loadLocation(),
+            ]);
           },
           child: CustomScrollView(
             slivers: [
@@ -392,6 +507,8 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(child: _buildHeroCTA()),
               SliverToBoxAdapter(child: _buildQuickActions()),
               SliverToBoxAdapter(child: _buildLocationBanner()),
+              if (_userLocation != null)
+                SliverToBoxAdapter(child: _buildRadiusChips()),
               SliverToBoxAdapter(child: _buildSearchBar()),
               SliverToBoxAdapter(child: _buildFilterChips()),
               if (_activeFilterTags.isNotEmpty)
@@ -585,7 +702,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      if (_userLocation == null) {
+                        LocationService.clearCache();
+                        await _loadLocation();
+                      }
                       _searchFocusNode.requestFocus();
                     },
                     child: Container(
@@ -601,17 +722,28 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      child: const Column(
+                      child: Column(
                         children: [
-                          Icon(Icons.search, color: _kMaroon, size: 22),
-                          SizedBox(height: 4),
-                          Text(
-                            'Find a Room',
-                            style: TextStyle(
-                              color: _kMaroon,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const Icon(Icons.search, color: _kMaroon, size: 22),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_userLocation == null)
+                                const Padding(
+                                  padding: EdgeInsets.only(right: 4),
+                                  child: Icon(Icons.location_searching,
+                                      color: _kMaroon, size: 12),
+                                ),
+                              Text(
+                                'Find a Room',
+                                style: TextStyle(
+                                  color: _kMaroon,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -982,20 +1114,42 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_locationDenied || _userLocation == null) {
       return Container(
         margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: _kSurface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kBorder),
+          border: Border.all(color: _kGold.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.location_off_outlined, color: _kMutedText, size: 16),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _kMaroon.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.location_off_outlined,
+                  color: _kGold, size: 16),
+            ),
+            const SizedBox(width: 10),
             const Expanded(
-              child: Text(
-                'Enable location — to see nearby rooms',
-                style: TextStyle(color: _kMutedText, fontSize: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Turn on Location',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'To find rooms near you',
+                    style: TextStyle(color: _kMutedText, fontSize: 11),
+                  ),
+                ],
               ),
             ),
             GestureDetector(
@@ -1003,12 +1157,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 LocationService.clearCache();
                 _loadLocation();
               },
-              child: const Text(
-                'Enable',
-                style: TextStyle(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
                   color: _kGold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _kGold.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  'Allow',
+                  style: TextStyle(
+                    color: _kMaroon,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -1056,7 +1224,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _sortByDistance ? 'Nearest first' : 'Showing all listings',
+                  _sortByDistance
+                      ? 'Showing rooms within $_radiusKm km'
+                      : 'Showing all listings',
                   style: TextStyle(color: _kMutedText, fontSize: 11),
                 ),
               ],
@@ -1086,13 +1256,104 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   setState(() {
                     _sortByDistance = !_sortByDistance;
-                    _sortOption = SortOption.distance;
+                    _sortOption = _sortByDistance
+                        ? SortOption.distance
+                        : SortOption.newest;
                   });
                 },
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRadiusChips() {
+    return Container(
+      height: 44,
+      margin: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _kRadiusOptions.length,
+        itemBuilder: (context, index) {
+          final km = _kRadiusOptions[index];
+          final selected = _radiusKm == km;
+          final count = _listings.where((l) {
+            if (l.distanceKm == null) return false;
+            return l.distanceKm! <= km;
+          }).length;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _radiusKm = km;
+                _sortByDistance = true;
+                _sortOption = SortOption.distance;
+              });
+              _computeDistances();
+            },
+            child: Container(
+              margin: EdgeInsets.only(
+                  right: index < _kRadiusOptions.length - 1 ? 8 : 0),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? _kGold : _kSurface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: selected ? _kGoldLight : _kBorder,
+                  width: selected ? 1.2 : 1,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: _kGold.withValues(alpha: 0.25),
+                          blurRadius: 6,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.track_changes,
+                    size: 14,
+                    color: selected ? _kMaroon : _kGold,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$km km',
+                    style: TextStyle(
+                      color: selected ? _kMaroon : Colors.white,
+                      fontSize: 12.5,
+                      fontWeight:
+                          selected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? _kMaroon.withValues(alpha: 0.15)
+                          : _kGold.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        color: selected ? _kMaroon : _kGold,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1332,6 +1593,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNearMeSection() {
+    final count = _nearbyListings.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1353,7 +1615,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 10),
               const Text(
-                'Near You',
+                'Rooms Near You',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -1361,6 +1623,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _kGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _kGold.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  _userLocation != null
+                      ? 'Within $_radiusKm km · $count'
+                      : '$count',
+                  style: const TextStyle(
+                    color: _kGold,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               if (_isLoadingNearby)
                 const SizedBox(
                   width: 12,
