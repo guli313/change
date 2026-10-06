@@ -34,6 +34,47 @@ class LocationService {
 
   // ── User ka GPS location lena ─────────────────────────────────────────────
 
+  // ── Known Cities Static Coordinates Lookup ──────────────────────────────
+  static const Map<String, GeoResult> _kKnownCityCoords = {
+    // Pakistan
+    'lahore': GeoResult(latitude: 31.5204, longitude: 74.3587),
+    'karachi': GeoResult(latitude: 24.8607, longitude: 67.0011),
+    'islamabad': GeoResult(latitude: 33.6844, longitude: 73.0479),
+    'rawalpindi': GeoResult(latitude: 33.5651, longitude: 73.0169),
+    'faisalabad': GeoResult(latitude: 31.4504, longitude: 73.1350),
+    'multan': GeoResult(latitude: 30.1575, longitude: 71.5249),
+    'peshawar': GeoResult(latitude: 34.0151, longitude: 71.5249),
+    'quetta': GeoResult(latitude: 30.1798, longitude: 66.9750),
+    'sialkot': GeoResult(latitude: 32.4945, longitude: 74.5229),
+    'gujranwala': GeoResult(latitude: 32.1877, longitude: 74.1945),
+    'sheikhupura': GeoResult(latitude: 31.7167, longitude: 73.9850),
+    'kasur': GeoResult(latitude: 31.1179, longitude: 74.4461),
+    'hyderabad': GeoResult(latitude: 25.3960, longitude: 68.3578),
+    'bahawalpur': GeoResult(latitude: 29.3544, longitude: 71.6911),
+    'sargodha': GeoResult(latitude: 32.0836, longitude: 72.6711),
+    'abbottabad': GeoResult(latitude: 34.1688, longitude: 73.2215),
+    'gujrat': GeoResult(latitude: 32.5742, longitude: 74.0754),
+    'sukkur': GeoResult(latitude: 27.7052, longitude: 68.8574),
+    // UK
+    'london': GeoResult(latitude: 51.5074, longitude: -0.1278),
+    'manchester': GeoResult(latitude: 53.4808, longitude: -2.2426),
+    'birmingham': GeoResult(latitude: 52.4862, longitude: -1.8904),
+    'leeds': GeoResult(latitude: 53.8008, longitude: -1.5491),
+    'edinburgh': GeoResult(latitude: 55.9533, longitude: -3.1883),
+    'sheffield': GeoResult(latitude: 53.3811, longitude: -1.4701),
+    'nottingham': GeoResult(latitude: 52.9548, longitude: -1.1581),
+    // USA & Others
+    'new york': GeoResult(latitude: 40.7128, longitude: -74.0060),
+    'los angeles': GeoResult(latitude: 34.0522, longitude: -118.2437),
+    'chicago': GeoResult(latitude: 41.8781, longitude: -87.6298),
+    'houston': GeoResult(latitude: 29.7604, longitude: -95.3698),
+    'boston': GeoResult(latitude: 42.3601, longitude: -71.0589),
+    'san francisco': GeoResult(latitude: 37.7749, longitude: -122.4194),
+    'toronto': GeoResult(latitude: 43.6532, longitude: -79.3832),
+    'vancouver': GeoResult(latitude: 49.2827, longitude: -123.1207),
+    'dubai': GeoResult(latitude: 25.2048, longitude: 55.2708),
+  };
+
   /// Device ka current GPS location return karta hai.
   /// Permission nahi hai to null return karega (crash nahi karega).
   static Future<UserLocation?> getCurrentLocation() async {
@@ -66,18 +107,42 @@ class LocationService {
       String? country;
       String? countryIso;
       try {
-        final placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          city = p.locality ?? p.subAdministrativeArea ?? p.administrativeArea;
-          country = p.country;
-          countryIso = p.isoCountryCode;
+        if (!kIsWeb) {
+          final placemarks = await placemarkFromCoordinates(
+            position.latitude,
+            position.longitude,
+          );
+          if (placemarks.isNotEmpty) {
+            final p = placemarks.first;
+            city = p.locality ?? p.subAdministrativeArea ?? p.administrativeArea;
+            country = p.country;
+            countryIso = p.isoCountryCode;
+          }
         }
       } catch (_) {
-        // Geocoding fail hua to city null rahega — koi baat nahi
+        // Geocoding fail hua to city null rahega
+      }
+
+      // Web ya missing city fallback ke liye nearest known city dhundo
+      if (city == null) {
+        String? closestCity;
+        double minDistance = double.infinity;
+        for (final entry in _kKnownCityCoords.entries) {
+          final d = distanceKm(
+            position.latitude,
+            position.longitude,
+            entry.value.latitude,
+            entry.value.longitude,
+          );
+          if (d < minDistance) {
+            minDistance = d;
+            closestCity = entry.key[0].toUpperCase() + entry.key.substring(1);
+          }
+        }
+        if (minDistance <= 150 && closestCity != null) {
+          city = closestCity;
+          country ??= 'Pakistan';
+        }
       }
 
       _cachedLocation = UserLocation(
@@ -93,6 +158,36 @@ class LocationService {
       debugPrint('LocationService: GPS error — $e');
       return null;
     }
+  }
+
+  /// Manual ya fallback city set karne ke liye
+  static UserLocation setManualLocation(
+    String cityName, {
+    double? lat,
+    double? lng,
+    String? country,
+  }) {
+    final key = cityName.trim().toLowerCase();
+    GeoResult? match;
+    for (final entry in _kKnownCityCoords.entries) {
+      if (key == entry.key || key.contains(entry.key) || entry.key.contains(key)) {
+        match = entry.value;
+        break;
+      }
+    }
+    final finalLat = lat ?? match?.latitude ?? 31.5204;
+    final finalLng = lng ?? match?.longitude ?? 74.3587;
+    final titleCity = cityName.isNotEmpty
+        ? cityName[0].toUpperCase() + cityName.substring(1)
+        : 'Lahore';
+    _cachedLocation = UserLocation(
+      latitude: finalLat,
+      longitude: finalLng,
+      cityName: titleCity,
+      countryName: country ?? 'Pakistan',
+    );
+    _lastFetch = DateTime.now();
+    return _cachedLocation!;
   }
 
   /// Cache clear karo (refresh ke liye)
@@ -111,23 +206,32 @@ class LocationService {
     final key = cityName.trim().toLowerCase();
     if (_geoCache.containsKey(key)) return _geoCache[key];
 
-    try {
-      final locations = await locationFromAddress(cityName);
-      if (locations.isEmpty) {
-        _geoCache[key] = null;
-        return null;
+    // Known cities lookup
+    for (final entry in _kKnownCityCoords.entries) {
+      if (key == entry.key || key.contains(entry.key) || entry.key.contains(key)) {
+        _geoCache[key] = entry.value;
+        return entry.value;
       }
-      final result = GeoResult(
-        latitude: locations.first.latitude,
-        longitude: locations.first.longitude,
-      );
-      _geoCache[key] = result;
-      return result;
-    } catch (e) {
-      debugPrint('LocationService: Geocoding failed for "$cityName" — $e');
-      _geoCache[key] = null;
-      return null;
     }
+
+    if (!kIsWeb) {
+      try {
+        final locations = await locationFromAddress(cityName);
+        if (locations.isNotEmpty) {
+          final result = GeoResult(
+            latitude: locations.first.latitude,
+            longitude: locations.first.longitude,
+          );
+          _geoCache[key] = result;
+          return result;
+        }
+      } catch (e) {
+        debugPrint('LocationService: Geocoding failed for "$cityName" — $e');
+      }
+    }
+
+    _geoCache[key] = null;
+    return null;
   }
 
   // ── Distance calculation (Haversine formula) ──────────────────────────────
