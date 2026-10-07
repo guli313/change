@@ -17,10 +17,11 @@ const Color _kMutedText = Color(0xFF9B9B9B);
 const Color _kBorder = Color(0xFF2A2626);
 
 enum MapStyle {
-  openStreetMap,
+  english,
+  streets,
   dark,
   satellite,
-  streets,
+  local,
 }
 
 class MapScreen extends StatefulWidget {
@@ -46,7 +47,7 @@ class _MapScreenState extends State<MapScreen> {
   Listing? _selectedListing;
   int _radiusKm = 50;
   final List<int> _radiusOptions = [5, 10, 20, 50, 100, 200];
-  MapStyle _mapStyle = MapStyle.openStreetMap;
+  MapStyle _mapStyle = MapStyle.english;
 
   @override
   void initState() {
@@ -223,13 +224,26 @@ class _MapScreenState extends State<MapScreen> {
 
   TileLayer _buildTileLayer() {
     switch (_mapStyle) {
-      case MapStyle.openStreetMap:
+      case MapStyle.english:
+        // CartoDB Voyager: 100% Free, Global English Names (No API key needed)
         return TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate:
+              'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
+          userAgentPackageName: 'com.example.roommate_finder',
+          retinaMode: true,
+          maxZoom: 19,
+        );
+      case MapStyle.streets:
+        // Esri World Street Map: 100% Free, English Street Details
+        return TileLayer(
+          urlTemplate:
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
           userAgentPackageName: 'com.example.roommate_finder',
           maxZoom: 19,
         );
       case MapStyle.dark:
+        // CartoDB Dark Matter: 100% Free, English Labels Dark Theme
         return TileLayer(
           urlTemplate:
               'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -239,16 +253,17 @@ class _MapScreenState extends State<MapScreen> {
           maxZoom: 19,
         );
       case MapStyle.satellite:
+        // Esri World Imagery: 100% Free Aerial Satellite View
         return TileLayer(
           urlTemplate:
               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           userAgentPackageName: 'com.example.roommate_finder',
           maxZoom: 19,
         );
-      case MapStyle.streets:
+      case MapStyle.local:
+        // OpenStreetMap Standard: Local language script
         return TileLayer(
-          urlTemplate:
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.roommate_finder',
           maxZoom: 19,
         );
@@ -425,28 +440,34 @@ class _MapScreenState extends State<MapScreen> {
             ),
             const SizedBox(height: 16),
             _buildStyleTile(
-              style: MapStyle.openStreetMap,
-              title: 'OpenStreetMap (Default)',
-              subtitle: '100% Free & Open-source standard world map',
-              icon: Icons.public,
-            ),
-            _buildStyleTile(
-              style: MapStyle.dark,
-              title: 'CartoDB Dark Matter',
-              subtitle: 'Free sleek dark-mode basemap',
-              icon: Icons.dark_mode,
+              style: MapStyle.english,
+              title: 'English Map (Default)',
+              subtitle: 'Free OSM map with global English labels (CartoDB Voyager)',
+              icon: Icons.language,
             ),
             _buildStyleTile(
               style: MapStyle.streets,
-              title: 'Esri World Street Map',
-              subtitle: 'Free high-resolution street & city details',
+              title: 'English Streets (Esri)',
+              subtitle: 'Free high-res English streets & city details',
               icon: Icons.alt_route,
             ),
             _buildStyleTile(
+              style: MapStyle.dark,
+              title: 'Dark Mode (CartoDB)',
+              subtitle: 'Free sleek dark-mode map with English labels',
+              icon: Icons.dark_mode,
+            ),
+            _buildStyleTile(
               style: MapStyle.satellite,
-              title: 'Esri World Imagery (Satellite)',
-              subtitle: 'Free aerial satellite imagery view',
+              title: 'Satellite Imagery (Esri)',
+              subtitle: 'Free aerial satellite view',
               icon: Icons.satellite_alt,
+            ),
+            _buildStyleTile(
+              style: MapStyle.local,
+              title: 'OpenStreetMap (Local Names)',
+              subtitle: 'Standard OSM with local script (Urdu/Regional)',
+              icon: Icons.public,
             ),
           ],
         ),
@@ -650,6 +671,7 @@ class _MapScreenState extends State<MapScreen> {
                     final l = _nearbyListings[i];
                     return _NearbyListItem(
                       listing: l,
+                      isSelected: _selectedListing?.id == l.id,
                       onTap: () => _showListingSheet(l),
                       onFocus: () async {
                         final geo =
@@ -830,11 +852,13 @@ class _ListingMarker extends StatelessWidget {
 
 class _NearbyListItem extends StatelessWidget {
   final Listing listing;
+  final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onFocus;
 
   const _NearbyListItem({
     required this.listing,
+    this.isSelected = false,
     required this.onTap,
     required this.onFocus,
   });
@@ -850,9 +874,12 @@ class _NearbyListItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: _kCardBg,
+          color: isSelected ? _kGold.withValues(alpha: 0.08) : _kCardBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kBorder),
+          border: Border.all(
+            color: isSelected ? _kGold : _kBorder,
+            width: isSelected ? 1.5 : 1.0,
+          ),
         ),
         child: Row(
           children: [
