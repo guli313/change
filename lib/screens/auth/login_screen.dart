@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:roommate_finder/screens/auth/forgot_password_screen.dart';
 import 'package:roommate_finder/screens/auth/signup_screen.dart';
 import 'package:roommate_finder/screens/home/home_screen.dart';
 
@@ -334,7 +335,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: implement forgot password flow
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPasswordScreen(
+                            initialEmail: _emailController.text.trim(),
+                          ),
+                        ),
+                      );
                     },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
@@ -400,6 +408,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     child: const Text(
                       'Skip for now',
                       style: TextStyle(
@@ -407,11 +420,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
                 ),

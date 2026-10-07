@@ -1,6 +1,6 @@
 {
-    "name": "roommate_finder",
-    "short_name": "roommate_finder",
+    "name": "Roommate Finder",
+    "short_name": "Roommate Finder",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

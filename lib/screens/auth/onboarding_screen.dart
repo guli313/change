@@ -126,9 +126,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               // Top logo
               Positioned(
-                top: 24,
+                top: 20,
                 left: 24,
-                child: Image.asset('assets/icons/appicon.png', height: 45),
+                child: Image.asset('assets/icons/appicon.png', height: 40),
               ),
 
               // Page content
@@ -144,14 +144,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 itemBuilder: (context, index) {
                   final page = pages[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 36,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 85),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 15),
+                        const SizedBox(height: 75),
                         // Title
                         Text(
                           page["title"],
@@ -182,7 +179,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 1.4,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         Expanded(
                           child: Center(
                             child: Container(
