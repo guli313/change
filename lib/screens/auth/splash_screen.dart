@@ -70,13 +70,13 @@ class _SplashScreenState extends State<SplashScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Spacer(flex: 4),
-                    // Wing icon
+                    // App Icon
                     Image.asset(
                       'assets/icons/appicon.png',
-                      height: 220,
+                      height: 210,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 35),
+                    const SizedBox(height: 48),
                     // ROOMMATE
                     const Text(
                       'ROOMMATE',
@@ -88,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 10),
                     // FINDER
                     Text(
                       'FINDER',

@@ -17,7 +17,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
-        android:label="roommate_finder"
+        android:label="Roommate Finder"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
