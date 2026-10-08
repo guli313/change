@@ -10,6 +10,7 @@ import '../listing/post_listing_screen.dart';
 import '../profile/my_profile_screen.dart';
 import 'favorites_screen.dart';
 import 'filter_screen.dart';
+import 'find_room_screen.dart';
 import 'listing_detail_screen.dart';
 import 'map_screen.dart';
 import 'notifications_screen.dart';
@@ -1935,39 +1936,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onFindRoomTapped() async {
-    if (_userLocation == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: _kGold),
-                ),
-                SizedBox(width: 10),
-                Text('Detecting your location...'),
-              ],
-            ),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
-      await _loadLocation();
-    }
-
-    if (!mounted) return;
-
-    if (_userLocation == null) {
-      _showCityAndDiameterSelectorSheet();
-      return;
-    }
-
-    await _computeDistances();
-    if (!mounted) return;
-
-    _showDiameterSelectorBottomSheet();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FindRoomScreen()),
+    );
   }
 
   void _scrollToResults() {
