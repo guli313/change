@@ -350,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: const Text(
-                      'Forgot Password?',
+                      'Password Bhool Gaye?',
                       style: TextStyle(color: _kGold, fontSize: 13),
                     ),
                   ),

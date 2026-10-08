@@ -60,12 +60,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       debugPrint('Reset password error: $e');
       if (!mounted) return;
 
-      String message = 'Unable to send reset link. Please try again.';
+      String message = 'Reset link bhejna namumkin. Dobara koshish karein.';
       if (e is AuthException) {
         message = e.message;
       } else if (e.toString().contains('initialize')) {
         message =
-            'Supabase is not initialized. Please check network and configuration.';
+            'Supabase initialize nahi hua. Network aur config check karein.';
       } else {
         message = e.toString();
       }
@@ -177,7 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
           const Center(
             child: Text(
-              'Forgot Password?',
+              'Password Bhool Gaye?',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -188,7 +188,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 10),
           const Center(
             child: Text(
-              'Enter your registered email address below and we will send you a link to reset your password.',
+              'Apna registered email address likhein, hum aapko password reset karne ka link bhejein ge.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -210,10 +210,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Please enter your email';
+                return 'Email likhein';
               }
               if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim())) {
-                return 'Enter a valid email address';
+                return 'Sahi email address likhein';
               }
               return null;
             },
@@ -249,7 +249,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                     )
                   : const Text(
-                      'Send Reset Link',
+                      'Reset Link Bhejein',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,
@@ -265,7 +265,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.arrow_back, color: _kGold, size: 16),
               label: const Text(
-                'Back to Login',
+                'Login Par Wapas Jayein',
                 style: TextStyle(
                   color: _kGold,
                   fontSize: 14,
@@ -308,7 +308,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
         const Center(
           child: Text(
-            'Check Your Email',
+            'Apna Email Check Karein',
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -327,7 +327,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 height: 1.5,
               ),
               children: [
-                const TextSpan(text: 'We have sent password reset instructions to\n'),
+                const TextSpan(text: 'Hum ne password reset ke instructions bhej diye hain\n'),
                 TextSpan(
                   text: _sentToEmail,
                   style: const TextStyle(
@@ -336,7 +336,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
                 const TextSpan(
-                  text: '.\nPlease check your inbox and spam folder.',
+                  text: '.\nApna inbox aur spam folder check karein.',
                 ),
               ],
             ),
@@ -364,7 +364,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
             child: const Text(
-              'Back to Login',
+              'Login Par Wapas Jayein',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white,
@@ -385,7 +385,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     });
                   },
             child: const Text(
-              "Didn't receive the email? Try again",
+              'Email nahi mela? Dobara koshish karein',
               style: TextStyle(
                 color: _kGold,
                 fontSize: 14,
