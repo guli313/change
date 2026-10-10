@@ -5,6 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:roommate_finder/screens/auth/forgot_password_screen.dart';
 import 'package:roommate_finder/screens/auth/signup_screen.dart';
 import 'package:roommate_finder/screens/home/home_screen.dart';
+import 'package:roommate_finder/screens/home/host_dashboard.dart';
+import 'package:roommate_finder/screens/home/renter_dashboard.dart';
+import 'package:roommate_finder/services/auth_service.dart';
 
 // ---- Theme colors matching the design ----
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -28,6 +31,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  UserRole _selectedRole = UserRole.renter;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialRole();
+  }
+
+  Future<void> _loadInitialRole() async {
+    final role = await AuthService.getUserRole();
+    if (mounted) {
+      setState(() => _selectedRole = role);
+    }
+  }
+
+  void _navigateToDashboard() {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _selectedRole == UserRole.host
+            ? const HostDashboard()
+            : const RenterDashboard(),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -51,12 +80,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_logged_in', true);
+        await AuthService.setUserRole(_selectedRole);
 
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        _navigateToDashboard();
         return;
       }
 
@@ -116,11 +142,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (Supabase.instance.client.auth.currentSession != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('has_logged_in', true);
+        await AuthService.setUserRole(_selectedRole);
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
+        _navigateToDashboard();
       }
     } catch (e) {
       if (!mounted) return;
@@ -188,6 +212,241 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         );
       },
+    );
+  }
+
+  Future<void> _skipForNow() async {
+    await AuthService.setLocalRole(_selectedRole);
+    _navigateToDashboard();
+  }
+
+  Widget _buildRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.tune_rounded, color: _kGold, size: 16),
+            const SizedBox(width: 6),
+            const Text(
+              'SELECT ROLE / ACCOUNT TYPE',
+              style: TextStyle(
+                color: _kGoldLight,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: _kFieldFill,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF2E2A2A)),
+              ),
+              child: Text(
+                _selectedRole == UserRole.host ? 'Host Mode' : 'User Mode',
+                style: const TextStyle(
+                  color: _kGold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRoleCard(
+                role: UserRole.renter,
+                title: 'User / Seeker',
+                subtitle: 'Find Rooms & Mates',
+                icon: Icons.person_search_rounded,
+                badge: 'Kamra Dhoondhein',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildRoleCard(
+                role: UserRole.host,
+                title: 'Host / Owner',
+                subtitle: 'Rent Out & Manage',
+                icon: Icons.apartment_rounded,
+                badge: 'Kamra Dein',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _selectedRole == UserRole.host
+                ? _kMaroonStart.withValues(alpha: 0.25)
+                : _kGold.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _selectedRole == UserRole.host
+                  ? _kMaroonStart.withValues(alpha: 0.5)
+                  : _kGold.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                _selectedRole == UserRole.host
+                    ? Icons.real_estate_agent_rounded
+                    : Icons.check_circle_rounded,
+                color: _selectedRole == UserRole.host ? _kGoldLight : _kGold,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _selectedRole == UserRole.host
+                      ? 'Host Mode Active: Takes you directly to Host Dashboard to manage your properties, post rooms & view tenant leads.'
+                      : 'User Mode Active: Takes you directly to User Dashboard to explore nearby rooms, find roommates & save favorites.',
+                  style: TextStyle(
+                    color: _selectedRole == UserRole.host ? Colors.white70 : _kGoldLight,
+                    fontSize: 11.5,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleCard({
+    required UserRole role,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String badge,
+  }) {
+    final isSelected = _selectedRole == role;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedRole = role);
+        AuthService.setLocalRole(role);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? _kFieldFill : const Color(0xFF141212),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? _kGold : const Color(0xFF282525),
+            width: isSelected ? 1.8 : 1,
+          ),
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    _kMaroonStart.withValues(alpha: 0.35),
+                    _kFieldFill,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: _kGold.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? _kGold.withValues(alpha: 0.2)
+                        : const Color(0xFF201D1D),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected ? _kGold : Colors.transparent,
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? _kGold : _kMutedText,
+                    size: 20,
+                  ),
+                ),
+                const Spacer(),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? _kGold : Colors.transparent,
+                    border: Border.all(
+                      color: isSelected ? _kGold : _kMutedText.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 13, color: Colors.black)
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontSize: 13.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: _kMutedText,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? _kGold.withValues(alpha: 0.15)
+                    : Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badge,
+                style: TextStyle(
+                  color: isSelected ? _kGold : _kMutedText,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -275,7 +534,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 14, color: _kMutedText),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 22),
+                _buildRoleSelector(),
+                const SizedBox(height: 22),
 
                 TextFormField(
                   controller: _emailController,
@@ -385,37 +646,41 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _selectedRole == UserRole.host
+                                    ? Icons.apartment_rounded
+                                    : Icons.person_outline,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Login as ${_selectedRole == UserRole.host ? 'Host' : 'User'}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const HomeScreen(),
-                              ),
-                            );
-                          },
+                    onPressed: _isLoading ? null : _skipForNow,
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(0, 0),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text(
-                      'Skip for now',
-                      style: TextStyle(
+                    child: Text(
+                      'Skip & Enter as ${_selectedRole == UserRole.host ? 'Host' : 'User'}',
+                      style: const TextStyle(
                         color: _kGold,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

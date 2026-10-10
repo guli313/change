@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../services/auth_service.dart';
 import '../../services/favorites_service.dart';
 import '../../services/listings_service.dart';
 import '../../services/location_service.dart';
@@ -11,10 +12,12 @@ import '../profile/my_profile_screen.dart';
 import 'favorites_screen.dart';
 import 'filter_screen.dart';
 import 'find_room_screen.dart';
+import 'host_dashboard.dart';
 import 'listing_detail_screen.dart';
 import 'map_screen.dart';
 import 'notifications_screen.dart';
 import 'requests_screen.dart';
+import 'renter_dashboard.dart';
 import 'see_all_listings_screen.dart';
 
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -178,7 +181,18 @@ const List<Map<String, String>> _kSampleListings = [
 enum SortOption { newest, priceLow, priceHigh, distance }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialIndex;
+  final bool openProfile;
+  final bool? forceRole;
+  final bool forceBrowse;
+
+  const HomeScreen({
+    super.key,
+    this.initialIndex = 0,
+    this.openProfile = false,
+    this.forceRole,
+    this.forceBrowse = false,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -206,6 +220,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Listing> _nearbyListings = [];
   bool _isLoadingNearby = false;
   int _radiusKm = 25;
+  UserRole? _userRole;
+  bool _roleLoaded = false;
+  bool _profileOpened = false;
 
   static const List<int> _kRadiusOptions = [5, 10, 25, 50, 100, 0];
 
@@ -228,10 +245,28 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    currentIndex = widget.initialIndex;
     FavoritesService.init();
     _loadUserName();
     _loadListings();
     _loadLocation();
+    _loadRoleAndRoute();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.openProfile && !_profileOpened) {
+      _profileOpened = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (c) => const MyProfileScreen()),
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -240,6 +275,20 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRoleAndRoute() async {
+    try {
+      final role = await AuthService.getUserRole();
+      if (!mounted) return;
+      setState(() {
+        _userRole = role;
+        _roleLoaded = true;
+      });
+    } catch (e) {
+      debugPrint('loadRoleAndRoute error: $e');
+      if (mounted) setState(() => _roleLoaded = true);
+    }
   }
 
   void _loadUserName() {
@@ -513,6 +562,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.forceBrowse && _roleLoaded && _userRole != null) {
+      if (_userRole == UserRole.host) {
+        return const HostDashboard();
+      }
+      if (_userRole == UserRole.renter) {
+        return const RenterDashboard();
+      }
+    }
     final filtered = _filteredListings;
     return Scaffold(
       backgroundColor: _kBackground,

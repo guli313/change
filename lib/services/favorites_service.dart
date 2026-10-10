@@ -21,6 +21,11 @@ class FavoritesService {
 
   static List<String> get favoriteIds => List.unmodifiable(_favoriteIds);
 
+  static Future<Set<String>> getFavorites([String? userId]) async {
+    await init();
+    return _favoriteIds.toSet();
+  }
+
   static bool isFavorite(String listingId) {
     return _favoriteIds.contains(listingId);
   }

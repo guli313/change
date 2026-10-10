@@ -202,21 +202,6 @@ const List<String> _kRentalPeriods = [
   '/year',
 ];
 
-const List<String> _kAmenities = [
-  'WiFi',
-  'AC',
-  'Heater',
-  'Kitchen',
-  'Parking',
-  'Laundry',
-  'Furnished',
-  'CCTV',
-  'Elevator',
-  'Power Backup',
-  'Gas',
-  'Attached Bath',
-];
-
 class PostListingScreen extends StatefulWidget {
   const PostListingScreen({super.key});
 
@@ -248,11 +233,52 @@ class _PostListingScreenState extends State<PostListingScreen> {
   bool _showCityPicker = false;
   String _citySearch = '';
 
+  // Amenities fetched from Supabase
+  List<String> _amenities = [];
+  bool _loadingAmenities = true;
+  String? _amenitiesError;
+
   List<Map<String, String>> get _filteredCities {
     if (_citySearch.isEmpty) return _kCities;
     final q = _citySearch.toLowerCase();
     return _kCities.where((c) =>
-      c['city']!.toLowerCase().contains(q)).toList();
+        c['city']!.toLowerCase().contains(q)).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAmenities();
+  }
+
+  Future<void> _loadAmenities() async {
+    setState(() {
+      _loadingAmenities = true;
+      _amenitiesError = null;
+    });
+    try {
+      // Agar column ka naam 'name' nahi hai to yahan badal dein
+      final data = await Supabase.instance.client
+          .from('amenities')
+          .select('name');
+
+      final list = (data as List)
+          .map((row) => (row['name'] ?? '').toString().trim())
+          .where((n) => n.isNotEmpty)
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _amenities = list;
+        _loadingAmenities = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _amenitiesError = 'Could not load amenities';
+        _loadingAmenities = false;
+      });
+    }
   }
 
   @override
@@ -673,118 +699,118 @@ class _PostListingScreenState extends State<PostListingScreen> {
           ),
           image: hasImage
               ? DecorationImage(
-                  image: MemoryImage(_coverImageBytes!),
-                  fit: BoxFit.cover,
-                )
+            image: MemoryImage(_coverImageBytes!),
+            fit: BoxFit.cover,
+          )
               : null,
         ),
         child: hasImage
             ? Stack(
-                children: [
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _coverImage = null;
-                          _coverImageBytes = null;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
+          children: [
+            Positioned(
+              right: 10,
+              top: 10,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _coverImage = null;
+                    _coverImageBytes = null;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  Positioned(
-                    left: 10,
-                    bottom: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.edit, color: _kGold, size: 13),
-                          SizedBox(width: 5),
-                          Text(
-                            'Change Cover',
-                            style: TextStyle(
-                              color: _kGold,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 16,
                   ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _kGold.withValues(alpha: 0.12),
-                    ),
-                    child: const Icon(
-                      Icons.add_a_photo_outlined,
-                      color: _kGold,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Add Cover Photo',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Upload a nice photo to attract more matches',
-                    style: TextStyle(color: _kMuted, fontSize: 11.5),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _kMaroon.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _kMaroon.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: const Text(
-                      '📸 Tap to choose image',
+                ),
+              ),
+            ),
+            Positioned(
+              left: 10,
+              bottom: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.edit, color: _kGold, size: 13),
+                    SizedBox(width: 5),
+                    Text(
+                      'Change Cover',
                       style: TextStyle(
-                        color: _kGoldLight,
-                        fontSize: 11.5,
+                        color: _kGold,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ),
+          ],
+        )
+            : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _kGold.withValues(alpha: 0.12),
+              ),
+              child: const Icon(
+                Icons.add_a_photo_outlined,
+                color: _kGold,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Add Cover Photo',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Upload a nice photo to attract more matches',
+              style: TextStyle(color: _kMuted, fontSize: 11.5),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _kMaroon.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _kMaroon.withValues(alpha: 0.5),
+                ),
+              ),
+              child: const Text(
+                '📸 Tap to choose image',
+                style: TextStyle(
+                  color: _kGoldLight,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -848,7 +874,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 children: [
                   Text(
                     _kCities.firstWhere(
-                        (c) => c['city'] == _selectedCity,
+                            (c) => c['city'] == _selectedCity,
                         orElse: () => _kCities.first)['country']!,
                     style: const TextStyle(fontSize: 14),
                   ),
@@ -1055,8 +1081,8 @@ class _PostListingScreenState extends State<PostListingScreen> {
 
   Widget _buildRentRow() {
     final symbol = _kCurrencies
-            .firstWhere((c) => c['code'] == _selectedCurrency,
-                orElse: () => _kCurrencies.first)['symbol'] ??
+        .firstWhere((c) => c['code'] == _selectedCurrency,
+        orElse: () => _kCurrencies.first)['symbol'] ??
         '\$';
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1103,16 +1129,16 @@ class _PostListingScreenState extends State<PostListingScreen> {
                         color: _kGold, size: 16),
                     items: _kCurrencies
                         .map((c) => DropdownMenuItem(
-                              value: c['code'],
-                              child: Text(
-                                '${c['symbol']} ${c['code']}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ))
+                      value: c['code'],
+                      child: Text(
+                        '${c['symbol']} ${c['code']}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ))
                         .toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedCurrency = v);
@@ -1187,16 +1213,16 @@ class _PostListingScreenState extends State<PostListingScreen> {
                         color: _kGold, size: 18),
                     items: _kRentalPeriods
                         .map((p) => DropdownMenuItem(
-                              value: p,
-                              child: Text(
-                                p,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ))
+                      value: p,
+                      child: Text(
+                        p,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ))
                         .toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _rentalPeriod = v);
@@ -1253,57 +1279,93 @@ class _PostListingScreenState extends State<PostListingScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: _kAmenities.map((a) {
-              final sel = _selectedAmenities.contains(a);
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (sel) {
-                      _selectedAmenities.remove(a);
-                    } else {
-                      _selectedAmenities.add(a);
-                    }
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 11, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: sel
-                        ? _kGold.withValues(alpha: 0.18)
-                        : _kSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: sel ? _kGold : _kBorder,
-                      width: sel ? 1.3 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      sel
-                          ? const Icon(Icons.check,
-                              color: _kGold, size: 13)
-                          : _amenityIcon(a),
-                      SizedBox(width: sel ? 6 : 7),
-                      Text(
-                        a,
-                        style: TextStyle(
-                          color: sel ? _kGoldLight : Colors.white70,
-                          fontSize: 12,
-                          fontWeight: sel ? FontWeight.bold : FontWeight.w500,
-                        ),
-                      ),
-                    ],
+          if (_loadingAmenities)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _kGold,
                   ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            )
+          else if (_amenitiesError != null)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _amenitiesError!,
+                    style: const TextStyle(color: _kError, fontSize: 12),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _loadAmenities,
+                  child: const Text('Retry', style: TextStyle(color: _kGold)),
+                ),
+              ],
+            )
+          else if (_amenities.isEmpty)
+              const Text(
+                'No amenities available',
+                style: TextStyle(color: _kMuted, fontSize: 12),
+              )
+            else
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: _amenities.map((a) {
+                  final sel = _selectedAmenities.contains(a);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (sel) {
+                          _selectedAmenities.remove(a);
+                        } else {
+                          _selectedAmenities.add(a);
+                        }
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 11, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? _kGold.withValues(alpha: 0.18)
+                            : _kSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: sel ? _kGold : _kBorder,
+                          width: sel ? 1.3 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          sel
+                              ? const Icon(Icons.check,
+                              color: _kGold, size: 13)
+                              : _amenityIcon(a),
+                          SizedBox(width: sel ? 6 : 7),
+                          Text(
+                            a,
+                            style: TextStyle(
+                              color: sel ? _kGoldLight : Colors.white70,
+                              fontSize: 12,
+                              fontWeight:
+                              sel ? FontWeight.bold : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
         ],
       ),
     );
@@ -1357,13 +1419,13 @@ class _PostListingScreenState extends State<PostListingScreen> {
         textCapitalization: TextCapitalization.sentences,
         decoration: const InputDecoration(
           hintText:
-              'Describe your place: size, furniture, nearby market/university, rules, etc.',
+          'Describe your place: size, furniture, nearby market/university, rules, etc.',
           hintStyle: TextStyle(color: _kMuted, fontSize: 13, height: 1.5),
           prefixIcon:
-              Icon(Icons.edit_note, color: _kGold, size: 22),
+          Icon(Icons.edit_note, color: _kGold, size: 22),
           border: InputBorder.none,
           contentPadding:
-              EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         ),
         validator: (v) {
           if (v == null || v.trim().isEmpty) return 'Enter a description';
@@ -1489,41 +1551,41 @@ class _PostListingScreenState extends State<PostListingScreen> {
             ),
             child: _isSubmitting
                 ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Publishing...',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.upload_file_outlined, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Publish Listing',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14.5,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
                   ),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Publishing...',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            )
+                : const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.upload_file_outlined, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Publish Listing',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.5,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

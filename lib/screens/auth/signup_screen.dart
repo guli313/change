@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'login_screen.dart';
+import 'role_selection_screen.dart';
 
 // ---- Theme colors (same palette as LoginScreen) ----
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -62,12 +63,17 @@ class _SignupScreenState extends State<SignupScreen> {
       }
 
       // ✅ Insert profile into database
-      await Supabase.instance.client.from('profiles').insert({
-        'id': user.id,
-        'full_name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'avatar_url': null,
-      });
+      try {
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': user.id,
+          'full_name': _nameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'avatar_url': null,
+          'user_type': 'renter',
+        });
+      } catch (dbError) {
+        debugPrint('Failed to update profiles table on signup: $dbError');
+      }
 
       if (!mounted) return;
 
@@ -80,7 +86,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(
+          builder: (context) => const RoleSelectionScreen(showSkip: true),
+        ),
       );
     } catch (e) {
       debugPrint('Signup error details: $e');
