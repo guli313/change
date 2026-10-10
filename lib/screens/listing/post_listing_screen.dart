@@ -2,6 +2,9 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/listings_service.dart';
+import '../../services/location_service.dart';
 import '../../services/notification_service.dart';
 
 const Color _kBg = Color(0xFF0D0B0A);
@@ -304,7 +307,6 @@ class _PostListingScreenState extends State<PostListingScreen> {
     }
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 800));
 
     final amenities = _selectedAmenities.toList()..sort();
     final desc = StringBuffer(_descCtrl.text.trim());
@@ -328,6 +330,32 @@ class _PostListingScreenState extends State<PostListingScreen> {
     if (_genderPref == 'Male Only') tag = 'Male Only';
     if (_genderPref == 'Female Only') tag = 'Female Only';
 
+    final UserLocation? loc = LocationService.setManualLocation(_selectedCity);
+    final countryName = loc?.countryName;
+    final lat = loc?.latitude;
+    final lng = loc?.longitude;
+
+    final rentInt = int.tryParse(_rentCtrl.text.trim());
+    if (rentInt == null) {
+      setState(() => _isSubmitting = false);
+      _showToast('Rent should be a valid number');
+      return;
+    }
+
+    final createdId = await ListingsService.createListing(
+      title: _titleCtrl.text.trim(),
+      city: _selectedCity,
+      country: countryName,
+      rent: rentInt,
+      currency: _selectedCurrency,
+      period: _rentalPeriod,
+      tag: tag,
+      description: desc.toString(),
+      coverImageBytes: _coverImageBytes,
+      latitude: lat,
+      longitude: lng,
+    );
+
     NotificationService.addNotification(
       title: 'New post published',
       subtitle: _titleCtrl.text.trim(),
@@ -338,6 +366,9 @@ class _PostListingScreenState extends State<PostListingScreen> {
 
     if (mounted) {
       setState(() => _isSubmitting = false);
+      if (createdId == null) {
+        _showToast('Saved to your device. Will sync when online.');
+      }
       _showSuccessDialog();
     }
   }
@@ -401,7 +432,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(true);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kMaroon,

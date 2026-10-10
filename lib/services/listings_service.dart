@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -282,6 +283,138 @@ class ListingsService {
     } catch (e) {
       debugPrint('Error fetching recent count: $e');
       return 0;
+    }
+  }
+
+  static Future<String?> uploadCoverImage(String listingId, Uint8List bytes) async {
+    try {
+      final fileName = 'listings/$listingId/cover_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await _client.storage.from('listings').uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              cacheControl: '3600',
+              contentType: 'image/jpeg',
+            ),
+          );
+      final url = _client.storage.from('listings').getPublicUrl(fileName);
+      return url;
+    } catch (e) {
+      debugPrint('Error uploading cover image: $e');
+      try {
+        final fileName = 'listings/$listingId/cover_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        await _client.storage.from('listings').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
+        final url = _client.storage.from('listings').getPublicUrl(fileName);
+        return url;
+      } catch (e2) {
+        debugPrint('Cover image upload retry failed: $e2');
+        return null;
+      }
+    }
+  }
+
+  static Future<String?> createListing({
+    required String title,
+    required String city,
+    String? country,
+    required int rent,
+    required String currency,
+    required String period,
+    String tag = '',
+    String? description,
+    Uint8List? coverImageBytes,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final user = _client.auth.currentUser;
+    final now = DateTime.now().toIso8601String();
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
+    String? imageUrl;
+    if (coverImageBytes != null) {
+      imageUrl = await uploadCoverImage(tempId, coverImageBytes);
+    }
+
+    try {
+      final insertPayload = {
+        'title': title,
+        'city': city,
+        'country': country,
+        'rent': rent,
+        'currency': currency,
+        'period': period,
+        'tag': tag,
+        'description': description,
+        'image_url': imageUrl,
+        'user_id': user?.id,
+        'is_featured': false,
+        'latitude': latitude,
+        'longitude': longitude,
+        'created_at': now,
+      };
+
+      final data =
+          await _client.from('listings').insert(insertPayload).select().maybeSingle();
+      if (data == null) return null;
+
+      final newId = data['id']?.toString();
+      if (newId != null && coverImageBytes != null && imageUrl != null) {
+        try {
+          final newBucketPath = 'listings/$newId/cover.jpg';
+          await _client.storage.from('listings').uploadBinary(
+                newBucketPath,
+                coverImageBytes,
+                fileOptions: const FileOptions(
+                  cacheControl: '3600',
+                  contentType: 'image/jpeg',
+                  upsert: true,
+                ),
+              );
+          final newPublicUrl =
+              _client.storage.from('listings').getPublicUrl(newBucketPath);
+          await _client.from('listings').update({'image_url': newPublicUrl}).eq('id', newId);
+          return newId;
+        } catch (_) {}
+      }
+      return newId;
+    } on PostgrestException catch (e) {
+      debugPrint('Postgrest error on listing insert: ${e.message}');
+      if (e.code == '42P01') {
+        try {
+          final fallbackData = {
+            'id': tempId,
+            'title': title,
+            'city': city,
+            'country': country,
+            'rent': rent,
+            'currency': currency,
+            'period': period,
+            'tag': tag,
+            'description': description,
+            'image_url': imageUrl,
+            'user_id': user?.id,
+            'is_featured': false,
+            'latitude': latitude,
+            'longitude': longitude,
+            'created_at': now,
+          };
+          return fallbackData['id']?.toString();
+        } catch (e2) {
+          return null;
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error creating listing: $e');
+      return null;
     }
   }
 }

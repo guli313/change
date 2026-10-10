@@ -487,6 +487,30 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => currentIndex = index);
   }
 
+  Future<void> _navigateToPostListing() async {
+    final posted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const PostListingScreen()),
+    );
+    if (posted == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: _kGold, size: 18),
+              SizedBox(width: 10),
+              Text('New listing is now live on the home screen!'),
+            ],
+          ),
+          backgroundColor: _kSurface,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      await _loadListings();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredListings;
@@ -546,14 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const PostListingScreen(),
-              ),
-            );
-          },
+          onPressed: _navigateToPostListing,
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -775,14 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PostListingScreen(),
-                        ),
-                      );
-                    },
+                    onTap: _navigateToPostListing,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -820,14 +830,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PostListingScreen(),
-            ),
-          );
-        },
+        onTap: _navigateToPostListing,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -2727,14 +2730,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 10),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PostListingScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: _navigateToPostListing,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: _kGold,
                       side: const BorderSide(color: _kGold),
@@ -2879,12 +2875,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Post a Listing',
                       () {
                         Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PostListingScreen(),
-                          ),
-                        );
+                        _navigateToPostListing();
                       },
                     ),
                     _buildDrawerItem(
