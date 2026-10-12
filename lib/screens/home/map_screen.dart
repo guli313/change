@@ -48,6 +48,7 @@ class _MapScreenState extends State<MapScreen> {
   int _radiusKm = 50;
   final List<int> _radiusOptions = [5, 10, 20, 50, 100, 200];
   MapStyle _mapStyle = MapStyle.english;
+  bool _isNoListingsMinimized = false;
 
   @override
   void initState() {
@@ -200,6 +201,7 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _radiusKm = value;
       _selectedListing = null;
+      _isNoListingsMinimized = false;
     });
     _computeDistancesAndBuildMarkers();
   }
@@ -581,27 +583,136 @@ class _MapScreenState extends State<MapScreen> {
       return const SizedBox.shrink();
     }
     if (_nearbyListings.isEmpty) {
+      if (_isNoListingsMinimized) {
+        return Positioned(
+          bottom: 20,
+          left: 0,
+          right: 0,
+          child: SafeArea(
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => setState(() => _isNoListingsMinimized = false),
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _kSurface.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: _kBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.location_off_outlined,
+                            color: _kGold, size: 18),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'No listings within range',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.keyboard_arrow_up_rounded,
+                              color: Colors.white70, size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
       return Positioned(
         bottom: 20,
         left: 14,
         right: 14,
         child: SafeArea(
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
             decoration: BoxDecoration(
               color: _kSurface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _kBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.location_off, color: _kMutedText, size: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 60),
+                    const Center(
+                      child: Icon(Icons.location_off,
+                          color: _kGold, size: 30),
+                    ),
+                    InkWell(
+                      onTap: () =>
+                          setState(() => _isNoListingsMinimized = true),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(20),
+                          border:
+                              Border.all(color: _kBorder.withOpacity(0.5)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Minimize',
+                              style: TextStyle(
+                                  color: _kMutedText,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down_rounded,
+                                color: _kMutedText, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 const Text(
                   'No listings found within range',
                   style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
