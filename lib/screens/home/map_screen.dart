@@ -111,12 +111,12 @@ class _MapScreenState extends State<MapScreen> {
       userPins.add(
         Marker(
           point: LatLng(userLat, userLng),
-          width: 80,
-          height: 80,
-          child: const Column(
+          width: 140,
+          height: 65,
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _UserLocationPin(),
+              _UserLocationPin(cityName: _userLocation?.cityName),
             ],
           ),
         ),
@@ -149,8 +149,8 @@ class _MapScreenState extends State<MapScreen> {
 
           final marker = Marker(
             point: LatLng(geo.latitude, geo.longitude),
-            width: 70,
-            height: 70,
+            width: 110,
+            height: 75,
             child: _ListingMarker(
               listing: listingWithDist,
               onTap: () {
@@ -266,10 +266,9 @@ class _MapScreenState extends State<MapScreen> {
         // CartoDB Voyager: 100% Free, Global English Names (No API key needed)
         return TileLayer(
           urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
           userAgentPackageName: 'com.example.roommate_finder',
-          retinaMode: true,
           maxZoom: 19,
         );
       case MapStyle.streets:
@@ -284,10 +283,9 @@ class _MapScreenState extends State<MapScreen> {
         // CartoDB Dark Matter: 100% Free, English Labels Dark Theme
         return TileLayer(
           urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+              'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
           userAgentPackageName: 'com.example.roommate_finder',
-          retinaMode: true,
           maxZoom: 19,
         );
       case MapStyle.satellite:
@@ -954,26 +952,71 @@ class _MapScreenState extends State<MapScreen> {
 }
 
 class _UserLocationPin extends StatelessWidget {
-  const _UserLocationPin();
+  final String? cityName;
+  const _UserLocationPin({this.cityName});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _kGold,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            spreadRadius: 2,
+    final label = (cityName != null && cityName!.isNotEmpty)
+        ? 'You ($cityName)'
+        : 'Your Location';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+          decoration: BoxDecoration(
+            color: _kSurface.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _kGold, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: const Icon(Icons.person, color: _kBackground, size: 18),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.my_location, color: _kGold, size: 10),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _kGold,
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 8,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: const Icon(Icons.person, color: _kBackground, size: 16),
+        ),
+      ],
     );
   }
 }
@@ -987,13 +1030,16 @@ class _ListingMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rent = listing.rentDisplay;
+    final title = listing.title.isNotEmpty ? listing.title : listing.city;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+            constraints: const BoxConstraints(maxWidth: 100),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [_kMaroonStart, _kMaroonEnd],
@@ -1001,22 +1047,38 @@ class _ListingMarker extends StatelessWidget {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.6)),
+              border: Border.all(color: _kGold.withValues(alpha: 0.8)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: Colors.black.withValues(alpha: 0.45),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
               ],
             ),
-            child: Text(
-              rent,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (title.isNotEmpty)
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                Text(
+                  rent,
+                  style: const TextStyle(
+                    color: _kGoldLight,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
           Container(
@@ -1024,15 +1086,15 @@ class _ListingMarker extends StatelessWidget {
             height: 0,
             decoration: const BoxDecoration(
               border: Border(
-                left: BorderSide(color: Colors.transparent, width: 6),
-                right: BorderSide(color: Colors.transparent, width: 6),
-                top: BorderSide(color: _kMaroonEnd, width: 8),
+                left: BorderSide(color: Colors.transparent, width: 5),
+                right: BorderSide(color: Colors.transparent, width: 5),
+                top: BorderSide(color: _kMaroonEnd, width: 6),
               ),
             ),
           ),
           Container(
-            width: 12,
-            height: 12,
+            width: 10,
+            height: 10,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: _kGold,
