@@ -49,6 +49,8 @@ class _MapScreenState extends State<MapScreen> {
   final List<int> _radiusOptions = [5, 10, 20, 50, 100, 200];
   MapStyle _mapStyle = MapStyle.english;
   bool _isNoListingsMinimized = false;
+  bool _isBottomListMinimized = false;
+  bool _isShowingFallbackAll = false;
 
   @override
   void initState() {
@@ -67,11 +69,8 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _userLocation = loc;
         _isLoadingLocation = false;
-        if (loc == null) {
-          _errorMessage = 'Location permission denied. Enable GPS to use map.';
-        }
       });
-      if (_allListings.isNotEmpty && loc != null) {
+      if (_allListings.isNotEmpty) {
         _computeDistancesAndBuildMarkers();
       }
     }
@@ -86,7 +85,7 @@ class _MapScreenState extends State<MapScreen> {
           _allListings = listings;
           _isLoadingListings = false;
         });
-        if (_userLocation != null && listings.isNotEmpty) {
+        if (listings.isNotEmpty) {
           _computeDistancesAndBuildMarkers();
         }
       }
@@ -101,86 +100,123 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _computeDistancesAndBuildMarkers() async {
-    if (_userLocation == null || _allListings.isEmpty) return;
+    if (_allListings.isEmpty) return;
     setState(() => _isLoadingMarkers = true);
 
-    final userLat = _userLocation!.latitude;
-    final userLng = _userLocation!.longitude;
-    final List<Marker> markers = [];
-    final List<Listing> nearby = [];
+    final double? userLat = _userLocation?.latitude;
+    final double? userLng = _userLocation?.longitude;
+    final List<Marker> userPins = [];
 
-    markers.add(
-      Marker(
-        point: LatLng(userLat, userLng),
-        width: 80,
-        height: 80,
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _UserLocationPin(),
-          ],
+    if (userLat != null && userLng != null) {
+      userPins.add(
+        Marker(
+          point: LatLng(userLat, userLng),
+          width: 80,
+          height: 80,
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _UserLocationPin(),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    final List<Listing> nearbyList = [];
+    final List<Marker> nearbyMarkers = [];
+    final List<Listing> allWithDist = [];
+    final List<Marker> allListingMarkers = [];
 
     for (final listing in _allListings) {
       if (listing.city.isEmpty) continue;
       try {
         final geo = await LocationService.getCoordinatesForCity(listing.city);
         if (geo != null) {
-          final km = LocationService.distanceKm(
-            userLat,
-            userLng,
-            geo.latitude,
-            geo.longitude,
+          double? km;
+          if (userLat != null && userLng != null) {
+            km = LocationService.distanceKm(
+              userLat,
+              userLng,
+              geo.latitude,
+              geo.longitude,
+            );
+          }
+
+          final listingWithDist =
+              km != null ? listing.withDistance(km) : listing;
+          allWithDist.add(listingWithDist);
+
+          final marker = Marker(
+            point: LatLng(geo.latitude, geo.longitude),
+            width: 70,
+            height: 70,
+            child: _ListingMarker(
+              listing: listingWithDist,
+              onTap: () {
+                setState(() => _selectedListing = listingWithDist);
+                _showListingSheet(listingWithDist);
+              },
+            ),
           );
 
-          final listingWithDist = listing.withDistance(km);
+          allListingMarkers.add(marker);
 
-          if (km <= _radiusKm) {
-            nearby.add(listingWithDist);
-            markers.add(
-              Marker(
-                point: LatLng(geo.latitude, geo.longitude),
-                width: 70,
-                height: 70,
-                child: _ListingMarker(
-                  listing: listingWithDist,
-                  onTap: () {
-                    setState(() => _selectedListing = listingWithDist);
-                    _showListingSheet(listingWithDist);
-                  },
-                ),
-              ),
-            );
+          if (km != null && km <= _radiusKm) {
+            nearbyList.add(listingWithDist);
+            nearbyMarkers.add(marker);
           }
         }
       } catch (_) {}
     }
 
-    nearby.sort((a, b) => a.distanceKm!.compareTo(b.distanceKm!));
+    if (userLat != null && userLng != null) {
+      nearbyList
+          .sort((a, b) => (a.distanceKm ?? 0).compareTo(b.distanceKm ?? 0));
+      allWithDist
+          .sort((a, b) => (a.distanceKm ?? 0).compareTo(b.distanceKm ?? 0));
+    }
+
+    final bool hasNearby = nearbyList.isNotEmpty;
+    final List<Marker> finalMarkers = [];
+    finalMarkers.addAll(userPins);
+
+    if (hasNearby) {
+      finalMarkers.addAll(nearbyMarkers);
+    } else {
+      // Fallback: Agar range me listings na hon tou jahan jahan listings hain sab map pe show karo
+      finalMarkers.addAll(allListingMarkers);
+    }
 
     if (mounted) {
       setState(() {
         _markers.clear();
-        _markers.addAll(markers);
-        _nearbyListings = nearby;
+        _markers.addAll(finalMarkers);
+        _nearbyListings = hasNearby ? nearbyList : allWithDist;
+        _isShowingFallbackAll = !hasNearby && allWithDist.isNotEmpty;
         _isLoadingMarkers = false;
       });
 
-      if (nearby.isNotEmpty && nearby.first.distanceKm != null) {
-        final firstGeo =
-            await LocationService.getCoordinatesForCity(nearby.first.city);
-        if (firstGeo != null) {
-          Future.delayed(const Duration(milliseconds: 600), () {
-            if (mounted) {
-              _mapController.move(
-                LatLng(userLat, userLng),
-                11.0,
-              );
-            }
-          });
-        }
+      if (hasNearby && userLat != null && userLng != null) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) {
+            _mapController.move(
+              LatLng(userLat, userLng),
+              11.0,
+            );
+          }
+        });
+      } else if (!hasNearby && allListingMarkers.isNotEmpty) {
+        // Map camera ko listings wali location par move karo
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) {
+            final firstPoint = allListingMarkers.first.point;
+            _mapController.move(
+              LatLng(firstPoint.latitude, firstPoint.longitude),
+              allListingMarkers.length > 1 ? 6.5 : 12.0,
+            );
+          }
+        });
       }
     }
   }
@@ -361,6 +397,11 @@ class _MapScreenState extends State<MapScreen> {
                         '📍 ${_userLocation!.cityName}',
                         style:
                             const TextStyle(color: _kGoldLight, fontSize: 11),
+                      )
+                    else
+                      const Text(
+                        '📍 All listings view',
+                        style: TextStyle(color: _kGoldLight, fontSize: 11),
                       ),
                   ],
                 ),
@@ -617,7 +658,7 @@ class _MapScreenState extends State<MapScreen> {
                             color: _kGold, size: 18),
                         const SizedBox(width: 8),
                         const Text(
-                          'No listings within range',
+                          'No listings found',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12.5,
@@ -707,7 +748,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'No listings found within range',
+                  'No listings found',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -716,7 +757,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Try increasing the radius or check later.',
+                  'No listings exist in the database yet.',
                   style: TextStyle(color: _kMutedText, fontSize: 12),
                   textAlign: TextAlign.center,
                 ),
@@ -731,75 +772,117 @@ class _MapScreenState extends State<MapScreen> {
       left: 0,
       right: 0,
       child: SafeArea(
-        child: Container(
-          height: 200,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          height: _isBottomListMinimized ? 56 : 200,
           margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
           decoration: BoxDecoration(
             color: _kSurface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: _kBorder),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [_kGold, _kGoldLight],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+              InkWell(
+                onTap: () => setState(
+                    () => _isBottomListMinimized = !_isBottomListMinimized),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(14)),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [_kGold, _kGoldLight],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        borderRadius: BorderRadius.circular(2),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '${_nearbyListings.length} Nearby Listings',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _isShowingFallbackAll
+                                  ? '${_nearbyListings.length} Listings (All Locations)'
+                                  : '${_nearbyListings.length} Nearby Listings',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (_isShowingFallbackAll)
+                              Text(
+                                _userLocation != null
+                                    ? 'None within ${_radiusKm}km • Showing across map'
+                                    : 'Showing all available listings on map',
+                                style: const TextStyle(
+                                  color: _kGold,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    const Icon(Icons.drag_handle, color: _kMutedText, size: 20),
-                  ],
+                      Icon(
+                        _isBottomListMinimized
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: _kMutedText,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const Divider(color: _kBorder, height: 1),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  itemCount: _nearbyListings.length,
-                  itemBuilder: (ctx, i) {
-                    final l = _nearbyListings[i];
-                    return _NearbyListItem(
-                      listing: l,
-                      isSelected: _selectedListing?.id == l.id,
-                      onTap: () => _showListingSheet(l),
-                      onFocus: () async {
-                        final geo =
-                            await LocationService.getCoordinatesForCity(
-                                l.city);
-                        if (geo != null && mounted) {
-                          _mapController.move(
-                            LatLng(geo.latitude, geo.longitude),
-                            14.0,
-                          );
-                          setState(() => _selectedListing = l);
-                        }
-                      },
-                    );
-                  },
+              if (!_isBottomListMinimized) ...[
+                const Divider(color: _kBorder, height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    itemCount: _nearbyListings.length,
+                    itemBuilder: (ctx, i) {
+                      final l = _nearbyListings[i];
+                      return _NearbyListItem(
+                        listing: l,
+                        isSelected: _selectedListing?.id == l.id,
+                        onTap: () => _showListingSheet(l),
+                        onFocus: () async {
+                          final geo =
+                              await LocationService.getCoordinatesForCity(
+                                  l.city);
+                          if (geo != null && mounted) {
+                            _mapController.move(
+                              LatLng(geo.latitude, geo.longitude),
+                              14.0,
+                            );
+                            setState(() => _selectedListing = l);
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
