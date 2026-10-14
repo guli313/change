@@ -599,20 +599,34 @@ class _PostListingScreenState extends State<PostListingScreen> {
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      title: Row(
         children: [
-          Text(
-            'Post a Room',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.asset(
+              'assets/icons/appicon.png',
+              height: 26,
+              width: 26,
+              fit: BoxFit.contain,
             ),
           ),
-          Text(
-            'Get listed & find your roommate',
-            style: TextStyle(color: _kMuted, fontSize: 11.5),
+          const SizedBox(width: 10),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Post a Room',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Get listed & find your roommate',
+                style: TextStyle(color: _kMuted, fontSize: 11.5),
+              ),
+            ],
           ),
         ],
       ),

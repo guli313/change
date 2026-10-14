@@ -147,6 +147,18 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.call_outlined, color: _kGold),
             onPressed: () {},
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                height: 22,
+                width: 22,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert, color: _kGold),
             onPressed: () {},

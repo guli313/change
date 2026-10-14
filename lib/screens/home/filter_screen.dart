@@ -158,13 +158,28 @@ class _FilterScreenState extends State<FilterScreen> {
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Filter Listings',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                height: 22,
+                width: 22,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Filter Listings',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
