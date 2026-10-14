@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'search_roommate_screen.dart';
 import 'send_request_screen.dart';
 
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -424,10 +425,15 @@ class _RequestsScreenState extends State<RequestsScreen> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Search Requests',
-          icon: const Icon(Icons.search, color: _kGold, size: 24),
+          tooltip: 'Search Roommates',
+          icon: const Icon(Icons.person_search, color: _kGold, size: 24),
           onPressed: () {
-            _searchFocusNode.requestFocus();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const SearchRoommateScreen(),
+              ),
+            );
           },
         ),
         IconButton(

@@ -7,7 +7,10 @@ const Color _kMutedText = Color(0xFF9B9B9B);
 const Color _kBorder = Color(0xFF2A2626);
 
 class SendRequestScreen extends StatefulWidget {
-  const SendRequestScreen({super.key});
+  /// Optional: pre-fill data when coming from SearchRoommateScreen
+  final Map<String, dynamic>? toUser;
+
+  const SendRequestScreen({super.key, this.toUser});
 
   @override
   State<SendRequestScreen> createState() => _SendRequestScreenState();
@@ -19,6 +22,18 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _budgetController = TextEditingController();
   String _selectedGender = 'Female';
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill if sending to a specific user
+    final u = widget.toUser;
+    if (u != null) {
+      _nameController.text = u['name'] ?? '';
+      _budgetController.text = u['budget'] ?? '';
+      _selectedGender = (u['gender'] == 'Male') ? 'Male' : 'Female';
+    }
+  }
 
   @override
   void dispose() {
@@ -57,9 +72,11 @@ class _SendRequestScreenState extends State<SendRequestScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Send Request',
-              style: TextStyle(
+            Text(
+              widget.toUser != null
+                  ? 'Request to ${widget.toUser!['name']}'
+                  : 'Send Request',
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
