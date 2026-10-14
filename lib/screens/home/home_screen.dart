@@ -19,6 +19,7 @@ import 'notifications_screen.dart';
 import 'requests_screen.dart';
 import 'renter_dashboard.dart';
 import 'see_all_listings_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 const Color _kBackground = Color(0xFF0D0D0D);
 const Color _kSurface = Color(0xFF1A1717);
@@ -563,6 +564,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (!widget.forceBrowse && _roleLoaded && _userRole != null) {
+      if (_userRole == UserRole.admin) {
+        return const AdminDashboardScreen();
+      }
       if (_userRole == UserRole.host) {
         return const HostDashboard();
       }
