@@ -575,14 +575,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         // e.g. Image.asset('assets/images/logo.png', height: 18,
         // color: AppColors.gold). Falls back to a simple gold glyph if
         // the asset is missing so the header never breaks.
-        Image.asset(
-          'assets/images/logo.png',
-          height: 18,
-          color: AppColors.gold,
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.auto_awesome_rounded,
-            color: AppColors.gold,
-            size: 16,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Image.asset(
+            'assets/icons/appicon.png',
+            height: 22,
+            width: 22,
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(width: 7),

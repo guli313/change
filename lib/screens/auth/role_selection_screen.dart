@@ -57,6 +57,16 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        title: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/icons/appicon.png',
+            height: 32,
+            width: 32,
+            fit: BoxFit.contain,
+          ),
+        ),
         actions: [
           if (widget.showSkip)
             TextButton(
