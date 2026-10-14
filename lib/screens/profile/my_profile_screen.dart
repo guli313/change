@@ -9,6 +9,7 @@ import '../../utils/local_file.dart';
 import '../auth/login_screen.dart';
 import '../listing/post_listing_screen.dart';
 import 'edit_profile_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
 
 // ---- Theme colors (matching Login/Signup/Home screens) ----
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -738,6 +739,48 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   ),
 
                   const SizedBox(height: 30),
+
+                  // Admin Dashboard Entry
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    width: double.infinity,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_kMaroonStart, _kMaroonEnd],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kGold.withOpacity(0.8), width: 1.2),
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AdminDashboardScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.admin_panel_settings_rounded, color: _kGold),
+                      label: const Text(
+                        'Open Admin Dashboard',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
 
                   // Edit Profile Button
                   SizedBox(
