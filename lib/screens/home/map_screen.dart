@@ -372,7 +372,17 @@ class _MapScreenState extends State<MapScreen> {
                 onTap: () => Navigator.pop(context),
                 child: const Icon(Icons.arrow_back, color: _kGold, size: 24),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.asset(
+                  'assets/icons/appicon.png',
+                  height: 28,
+                  width: 28,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
