@@ -315,13 +315,28 @@ class _FindRoomScreenState extends State<FindRoomScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Navigator.maybePop(context),
         ),
-        title: const Text(
-          'Find a Room',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Find a Room',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         actions: [

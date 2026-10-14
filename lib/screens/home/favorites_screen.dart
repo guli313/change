@@ -60,12 +60,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       appBar: AppBar(
         backgroundColor: _kBackground,
         elevation: 0,
-        title: const Text(
-          'Favorites',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Favorites',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
