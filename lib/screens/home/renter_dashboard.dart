@@ -155,6 +155,24 @@ class _RenterDashboardState extends State<RenterDashboard> {
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
       child: Row(
         children: [
+          Container(
+            width: 44,
+            height: 44,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [_kMaroonStart, _kMaroonEnd]),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kGold.withValues(alpha: 0.4), width: 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

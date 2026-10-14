@@ -659,7 +659,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/icons/appicon.png',
+              height: 38,
+              width: 38,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -466,6 +466,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       title: Row(
         children: [
+          Image.asset(
+            'assets/icons/appicon.png',
+            height: 26,
+            width: 26,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(

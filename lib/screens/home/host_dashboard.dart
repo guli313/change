@@ -163,12 +163,19 @@ class _HostDashboardState extends State<HostDashboard> {
           Container(
             width: 46,
             height: 46,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [_kMaroonStart, _kMaroonEnd]),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _kGold.withValues(alpha: 0.4), width: 1),
             ),
-            child: const Icon(Icons.apartment_rounded, color: _kGoldLight, size: 22),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                fit: BoxFit.contain,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
