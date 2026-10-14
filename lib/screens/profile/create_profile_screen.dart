@@ -46,7 +46,24 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     debugPrint('CreateProfileScreen build');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Profile')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                'assets/icons/appicon.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('Create Profile'),
+          ],
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

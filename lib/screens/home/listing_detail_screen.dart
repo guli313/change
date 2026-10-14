@@ -145,6 +145,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 ),
                 onPressed: _toggleFavorite,
               ),
+              Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.asset(
+                      'assets/icons/appicon.png',
+                      height: 24,
+                      width: 24,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           SliverToBoxAdapter(
