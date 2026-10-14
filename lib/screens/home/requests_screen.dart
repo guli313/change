@@ -20,8 +20,10 @@ class RequestsScreen extends StatefulWidget {
 
 class _RequestsScreenState extends State<RequestsScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
   String _selectedFilter = 'All'; // 'All', 'Incoming', 'Sent'
+  bool _isAppBarSearchOpen = false;
 
   final List<Map<String, dynamic>> _allRequests = [
     {
@@ -30,9 +32,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
       'status': 'Incoming request',
       'type': 'Incoming',
       'city': 'Islamabad',
+      'area': 'DHA Phase 2',
       'date': '2 hours ago',
       'details': 'Looking for a female roommate near DHA Phase 2, Islamabad. Budget Rs. 25,000.',
       'avatar': 'A',
+      'budget': 'PKR 25,000',
     },
     {
       'id': 'req_2',
@@ -40,9 +44,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
       'status': 'Sent request',
       'type': 'Sent',
       'city': 'Lahore',
+      'area': 'Johar Town',
       'date': 'Yesterday',
       'details': 'Request sent for a 1-room shared flat in Johar Town, near Expo Center.',
       'avatar': 'B',
+      'budget': 'PKR 18,000',
     },
     {
       'id': 'req_3',
@@ -50,9 +56,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
       'status': 'Incoming request',
       'type': 'Incoming',
       'city': 'Karachi',
+      'area': 'Gulshan-e-Iqbal',
       'date': '2 days ago',
       'details': 'Inquiring about 2-bed apartment sharing in Gulshan-e-Iqbal. Working IT professional.',
       'avatar': 'U',
+      'budget': 'PKR 22,000',
     },
     {
       'id': 'req_4',
@@ -60,9 +68,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
       'status': 'Sent request',
       'type': 'Sent',
       'city': 'Rawalpindi',
+      'area': 'Bahria Town Phase 7',
       'date': '3 days ago',
       'details': 'Request sent for single room in Bahria Town Phase 7. Furnished with WiFi.',
       'avatar': 'Z',
+      'budget': 'PKR 20,000',
     },
     {
       'id': 'req_5',
@@ -70,15 +80,18 @@ class _RequestsScreenState extends State<RequestsScreen> {
       'status': 'Incoming request',
       'type': 'Incoming',
       'city': 'Lahore',
+      'area': 'Mall Road',
       'date': '5 days ago',
       'details': 'Medical student looking for a quiet roommate near King Edward / Mall Road.',
       'avatar': 'H',
+      'budget': 'PKR 15,000',
     },
   ];
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -87,7 +100,8 @@ class _RequestsScreenState extends State<RequestsScreen> {
       final nameMatches = req['name'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
       final detailsMatches = req['details'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
       final cityMatches = req['city'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
-      final queryMatches = _searchQuery.isEmpty || nameMatches || detailsMatches || cityMatches;
+      final areaMatches = req['area'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
+      final queryMatches = _searchQuery.isEmpty || nameMatches || detailsMatches || cityMatches || areaMatches;
 
       final filterMatches = _selectedFilter == 'All' || req['type'] == _selectedFilter;
 
@@ -103,84 +117,33 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       backgroundColor: _kBackground,
-      appBar: AppBar(
-        backgroundColor: _kBackground,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Image.asset(
-                'assets/icons/appicon.png',
-                height: 26,
-                width: 26,
-                fit: BoxFit.contain,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Requests',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Send New Request',
-            icon: const Icon(Icons.add_circle_outline, color: _kGold, size: 24),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SendRequestScreen()),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: _buildTopAppBar(),
       body: Column(
         children: [
-          // Top Banner with Description
+          // VERY TOP: Prominent "Search Requests" Bar
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_kMaroonStart, _kMaroonEnd],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+              color: _kSurface,
+              border: Border(
+                bottom: BorderSide(color: _kBorder, width: 1),
               ),
             ),
-            child: const Text(
-              'Track incoming inquiries from potential roommates and requests you have sent.',
-              style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-            ),
-          ),
-
-          // Top Search Bar Section
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Search Bar
                 Container(
                   decoration: BoxDecoration(
-                    color: _kSurface,
+                    color: _kCardBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _kBorder),
+                    border: Border.all(
+                      color: _searchQuery.isNotEmpty ? _kGold : _kBorder,
+                      width: _searchQuery.isNotEmpty ? 1.4 : 1.0,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withOpacity(0.3),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -188,6 +151,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value.trim();
@@ -195,12 +159,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
                     },
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'Search requests by name, city, or detail...',
+                      hintText: 'Search requests by name, city, area...',
                       hintStyle: const TextStyle(color: _kMutedText, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search, color: _kGold, size: 20),
+                      prefixIcon: const Icon(Icons.search, color: _kGold, size: 22),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: _kMutedText, size: 18),
+                              icon: const Icon(Icons.close_rounded, color: _kMutedText, size: 20),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() {
@@ -210,22 +174,22 @@ class _RequestsScreenState extends State<RequestsScreen> {
                             )
                           : null,
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                // Filter Chips
+                // Filter Chips Row
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildFilterChip('All', _allRequests.length),
+                      _buildFilterChip('All Requests', 'All', _allRequests.length),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Incoming', incomingCount),
+                      _buildFilterChip('Incoming', 'Incoming', incomingCount),
                       const SizedBox(width: 8),
-                      _buildFilterChip('Sent', sentCount),
+                      _buildFilterChip('Sent', 'Sent', sentCount),
                     ],
                   ),
                 ),
@@ -238,7 +202,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
             child: filtered.isEmpty
                 ? _buildEmptyState()
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
                     itemCount: filtered.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -290,7 +254,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
                                           const Icon(Icons.location_on, color: _kGold, size: 12),
                                           const SizedBox(width: 2),
                                           Text(
-                                            '${request['city']} • ${request['date']}',
+                                            '${request['area']}, ${request['city']} • ${request['date']}',
                                             style: const TextStyle(color: _kMutedText, fontSize: 11),
                                           ),
                                         ],
@@ -385,19 +349,115 @@ class _RequestsScreenState extends State<RequestsScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, int count) {
-    final isSelected = _selectedFilter == label;
+  PreferredSizeWidget _buildTopAppBar() {
+    if (_isAppBarSearchOpen) {
+      return AppBar(
+        backgroundColor: _kSurface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            setState(() {
+              _isAppBarSearchOpen = false;
+              _searchQuery = '';
+              _searchController.clear();
+            });
+          },
+        ),
+        title: TextField(
+          controller: _searchController,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: const InputDecoration(
+            hintText: 'Search requests...',
+            hintStyle: TextStyle(color: _kMutedText, fontSize: 14),
+            border: InputBorder.none,
+          ),
+          onChanged: (val) {
+            setState(() {
+              _searchQuery = val.trim();
+            });
+          },
+        ),
+        actions: [
+          if (_searchQuery.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: _kMutedText),
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = '';
+                });
+              },
+            ),
+        ],
+      );
+    }
+
+    return AppBar(
+      backgroundColor: _kBackground,
+      elevation: 0,
+      centerTitle: true,
+      iconTheme: const IconThemeData(color: Colors.white),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.asset(
+              'assets/icons/appicon.png',
+              height: 26,
+              width: 26,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Requests',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          tooltip: 'Search Requests',
+          icon: const Icon(Icons.search, color: _kGold, size: 24),
+          onPressed: () {
+            _searchFocusNode.requestFocus();
+          },
+        ),
+        IconButton(
+          tooltip: 'Send New Request',
+          icon: const Icon(Icons.add_circle_outline, color: _kGoldLight, size: 24),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SendRequestScreen()),
+            );
+          },
+        ),
+        const SizedBox(width: 4),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String filterKey, int count) {
+    final isSelected = _selectedFilter == filterKey;
     return InkWell(
       onTap: () {
         setState(() {
-          _selectedFilter = label;
+          _selectedFilter = filterKey;
         });
       },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? _kGold : _kSurface,
+          color: isSelected ? _kGold : _kCardBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? _kGold : _kBorder,
@@ -418,7 +478,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
-                color: isSelected ? _kBackground.withOpacity(0.2) : _kCardBg,
+                color: isSelected ? _kBackground.withOpacity(0.25) : _kSurface,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -454,7 +514,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Try adjusting your search query or filter chips.',
+              'Try searching with a different name, city, or area.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _kMutedText, fontSize: 12),
             ),
@@ -512,12 +572,25 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '${request['city']} • ${request['date']}',
+                        '${request['area']}, ${request['city']} • ${request['date']}',
                         style: const TextStyle(color: _kMutedText, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
+                if (request['budget'] != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _kGold.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: _kGold, width: 0.8),
+                    ),
+                    child: Text(
+                      request['budget'],
+                      style: const TextStyle(color: _kGoldLight, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
               ],
             ),
             const Divider(color: _kBorder, height: 24),
