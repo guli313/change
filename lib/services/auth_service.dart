@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-enum UserRole { renter, host }
+enum UserRole { renter, host, admin }
 
 class AuthService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -16,6 +16,9 @@ class AuthService {
       case 'landlord':
       case 'owner':
         return UserRole.host;
+      case 'admin':
+      case 'administrator':
+        return UserRole.admin;
       default:
         return UserRole.renter;
     }
@@ -27,6 +30,8 @@ class AuthService {
         return 'host';
       case UserRole.renter:
         return 'renter';
+      case UserRole.admin:
+        return 'admin';
     }
   }
 
@@ -36,6 +41,8 @@ class AuthService {
         return 'Host';
       case UserRole.renter:
         return 'Renter';
+      case UserRole.admin:
+        return 'Admin';
     }
   }
 
@@ -45,6 +52,8 @@ class AuthService {
         return 'I have a room / property to rent out';
       case UserRole.renter:
         return 'I am looking for a room or roommate';
+      case UserRole.admin:
+        return 'App administration, moderation & platform management';
     }
   }
 
