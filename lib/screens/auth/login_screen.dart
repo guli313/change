@@ -7,6 +7,7 @@ import 'package:roommate_finder/screens/auth/signup_screen.dart';
 import 'package:roommate_finder/screens/home/home_screen.dart';
 import 'package:roommate_finder/screens/home/host_dashboard.dart';
 import 'package:roommate_finder/screens/home/renter_dashboard.dart';
+import 'package:roommate_finder/screens/admin/admin_dashboard_screen.dart';
 import 'package:roommate_finder/services/auth_service.dart';
 
 // ---- Theme colors matching the design ----
@@ -218,6 +219,252 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _skipForNow() async {
     await AuthService.setLocalRole(_selectedRole);
     _navigateToDashboard();
+  }
+
+  // ── Admin Login Dialog ──
+  Future<void> _showAdminLoginDialog() async {
+    final adminEmailCtrl = TextEditingController();
+    final adminPassCtrl = TextEditingController();
+    bool obscure = true;
+    bool loading = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1717),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(color: _kGold.withOpacity(0.5), width: 1),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _kGold.withOpacity(0.15),
+                      border: Border.all(color: _kGold.withOpacity(0.5)),
+                    ),
+                    child: const Icon(
+                      Icons.admin_panel_settings_rounded,
+                      color: _kGold,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin Login',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Super Admin Access Only',
+                        style: TextStyle(color: _kMutedText, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 4),
+                  TextField(
+                    controller: adminEmailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Admin Email',
+                      hintStyle:
+                          const TextStyle(color: _kMutedText, fontSize: 13),
+                      prefixIcon:
+                          const Icon(Icons.email_outlined, color: _kGold, size: 20),
+                      filled: true,
+                      fillColor: const Color(0xFF0D0D0D),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2A2626)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2A2626)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: _kGold),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: adminPassCtrl,
+                    obscureText: obscure,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Admin Password',
+                      hintStyle:
+                          const TextStyle(color: _kMutedText, fontSize: 13),
+                      prefixIcon:
+                          const Icon(Icons.lock_outline, color: _kGold, size: 20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscure ? Icons.visibility_off : Icons.visibility,
+                          color: _kMutedText,
+                          size: 18,
+                        ),
+                        onPressed: () =>
+                            setDialogState(() => obscure = !obscure),
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFF0D0D0D),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2A2626)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF2A2626)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: _kGold),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF2A2626)),
+                          foregroundColor: _kMutedText,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: loading
+                            ? null
+                            : () async {
+                                final email =
+                                    adminEmailCtrl.text.trim();
+                                final pass = adminPassCtrl.text;
+                                if (email.isEmpty || pass.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Email aur password daalein'),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setDialogState(() => loading = true);
+                                try {
+                                  final response = await Supabase
+                                      .instance.client.auth
+                                      .signInWithPassword(
+                                    email: email,
+                                    password: pass,
+                                  );
+                                  if (response.user != null) {
+                                    await AuthService.setUserRole(
+                                        UserRole.admin);
+                                    final prefs = await SharedPreferences
+                                        .getInstance();
+                                    await prefs.setBool(
+                                        'has_logged_in', true);
+                                    if (ctx.mounted) Navigator.pop(ctx);
+                                    if (mounted) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const AdminDashboardScreen(),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    setDialogState(() => loading = false);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Galat credentials. Admin access denied.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } catch (e) {
+                                  setDialogState(() => loading = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Login failed: ${e.toString()}'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kGold,
+                          foregroundColor: Colors.black,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: loading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.black),
+                              )
+                            : const Text(
+                                'Login',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _buildRoleSelector() {
@@ -723,6 +970,51 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // ── Admin Login Button ──
+                const Row(
+                  children: [
+                    Expanded(child: Divider(color: Color(0xFF2A2626))),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(color: _kMutedText, fontSize: 12),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Color(0xFF2A2626))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: _isLoading ? null : _showAdminLoginDialog,
+                    icon: const Icon(
+                      Icons.admin_panel_settings_rounded,
+                      color: _kGold,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'Admin Login',
+                      style: TextStyle(
+                        color: _kGold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: _kGold, width: 1.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      backgroundColor: _kGold.withOpacity(0.06),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),

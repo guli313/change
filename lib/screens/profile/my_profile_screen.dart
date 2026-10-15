@@ -9,7 +9,6 @@ import '../../utils/local_file.dart';
 import '../auth/login_screen.dart';
 import '../listing/post_listing_screen.dart';
 import 'edit_profile_screen.dart';
-import '../admin/admin_dashboard_screen.dart';
 
 // ---- Theme colors (matching Login/Signup/Home screens) ----
 const Color _kBackground = Color(0xFF0D0D0D);
