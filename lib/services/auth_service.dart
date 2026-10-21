@@ -70,20 +70,19 @@ class AuthService {
 
   static Future<UserRole> getUserRole() async {
     try {
-      // 1. Check local cached selection
       final prefs = await SharedPreferences.getInstance();
-      final localRole = prefs.getString(_kRolePrefKey);
 
-      // 2. Check auth metadata if logged in
-      final meta = currentUser?.userMetadata ?? {};
-      final fromMeta = meta['user_type'] ?? meta['role'];
-      if (fromMeta is String && fromMeta.trim().isNotEmpty) {
-        final r = roleFromString(fromMeta);
-        await prefs.setString(_kRolePrefKey, roleToString(r));
-        return r;
+      // 1. Check if logged-in user is an admin by email
+      final email = currentUser?.email?.toLowerCase().trim() ?? '';
+      if (email == 'admin@roommatefinder.com' ||
+          email == 'admin@roommate.com' ||
+          email.startsWith('admin@') ||
+          email.contains('admin')) {
+        await prefs.setString(_kRolePrefKey, 'admin');
+        return UserRole.admin;
       }
 
-      // 3. Check profiles table
+      // 2. Check profiles table in Supabase
       final uid = currentUser?.id;
       if (uid != null) {
         final Map<String, dynamic>? data = await _client
@@ -101,7 +100,17 @@ class AuthService {
         }
       }
 
+      // 3. Check auth metadata if logged in
+      final meta = currentUser?.userMetadata ?? {};
+      final fromMeta = meta['user_type'] ?? meta['role'];
+      if (fromMeta is String && fromMeta.trim().isNotEmpty) {
+        final r = roleFromString(fromMeta);
+        await prefs.setString(_kRolePrefKey, roleToString(r));
+        return r;
+      }
+
       // 4. Fallback to local preference if present
+      final localRole = prefs.getString(_kRolePrefKey);
       if (localRole != null && localRole.isNotEmpty) {
         return roleFromString(localRole);
       }
