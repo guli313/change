@@ -45,17 +45,11 @@ class _HostDashboardState extends State<HostDashboard> {
       final user = AuthService.currentUser;
       _user = user;
       if (user != null) {
-        final all = await ListingsService.fetchListings(limit: 100);
-        final mine = all.where((l) => l.userId == user.id).toList()
-          ..sort((a, b) {
-            final da = a.createdAt ?? DateTime(2000);
-            final db = b.createdAt ?? DateTime(2000);
-            return db.compareTo(da);
-          });
+        final mine = await ListingsService.fetchHostListings(user.id);
         if (mounted) {
           setState(() {
             _myListings = mine;
-            _activeCount = mine.length;
+            _activeCount = mine.where((l) => l.status == 'approved').length;
             _totalViews = mine.length * 37;
             _pendingRequests = (mine.length * 1.3).round();
             _favoritesCount = (mine.length * 2.1).round();
@@ -530,23 +524,48 @@ class _HostDashboardState extends State<HostDashboard> {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Active',
-                          style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                      _buildListingStatusBadge(l),
                     ],
                   ),
+                  if (l.status == 'pending') ...[
+                    const SizedBox(height: 3),
+                    const Row(
+                      children: [
+                        Icon(Icons.hourglass_empty_rounded,
+                            color: Color(0xFFF39C12), size: 10),
+                        SizedBox(width: 3),
+                        Text(
+                          'Awaiting Admin approval • Not yet visible to users',
+                          style: TextStyle(
+                            color: Color(0xFFF39C12),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else if (l.status == 'rejected') ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline,
+                            color: Color(0xFFE74C3C), size: 10),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            'Rejected: ${l.rejectionReason ?? 'Did not meet requirements'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFFE74C3C),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -599,6 +618,54 @@ class _HostDashboardState extends State<HostDashboard> {
             ),
           ],
         ),
+    );
+  }
+
+  Widget _buildListingStatusBadge(Listing l) {
+    final status = l.status.toLowerCase();
+    Color bg;
+    Color fg;
+    IconData icon;
+    String label;
+
+    if (status == 'pending') {
+      bg = const Color(0xFFF39C12).withValues(alpha: 0.18);
+      fg = const Color(0xFFF39C12);
+      icon = Icons.hourglass_top_rounded;
+      label = 'Pending Review';
+    } else if (status == 'rejected') {
+      bg = const Color(0xFFE74C3C).withValues(alpha: 0.18);
+      fg = const Color(0xFFE74C3C);
+      icon = Icons.cancel_outlined;
+      label = 'Rejected';
+    } else {
+      bg = Colors.green.withValues(alpha: 0.15);
+      fg = Colors.greenAccent;
+      icon = Icons.check_circle_outline;
+      label = 'Active';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: fg.withValues(alpha: 0.4), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: fg, size: 9.5),
+          const SizedBox(width: 3.5),
+          Text(
+            label,
+            style: TextStyle(
+              color: fg,
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

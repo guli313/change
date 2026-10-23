@@ -547,14 +547,16 @@ class _HomeScreenState extends State<HomeScreen> {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.check_circle, color: _kGold, size: 18),
+              Icon(Icons.hourglass_top_rounded, color: _kGold, size: 18),
               SizedBox(width: 10),
-              Text('New listing is now live on the home screen!'),
+              Expanded(
+                child: Text('Room submitted! It will appear once approved by an admin.'),
+              ),
             ],
           ),
           backgroundColor: _kSurface,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
       await _loadListings();

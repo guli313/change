@@ -380,14 +380,16 @@ class _PostListingScreenState extends State<PostListingScreen> {
       coverImageBytes: _coverImageBytes,
       latitude: lat,
       longitude: lng,
+      hostName: _contactNameCtrl.text.trim(),
+      hostPhone: _contactPhoneCtrl.text.trim(),
+      hostEmail: Supabase.instance.client.auth.currentUser?.email,
+      roomType: _roomType,
     );
 
     NotificationService.addNotification(
-      title: 'New post published',
+      title: 'Room Submitted for Admin Approval',
       subtitle: _titleCtrl.text.trim(),
-      body: '${_rentCtrl.text.trim()}$_rentalPeriod · '
-          '${_areaCtrl.text.isNotEmpty ? '${_areaCtrl.text}, ' : ''}$_selectedCity\n'
-          '$desc',
+      body: 'Your listing "${_titleCtrl.text.trim()}" in $_selectedCity has been submitted. It will appear publicly after review and approval by the Admin.',
     );
 
     if (mounted) {
@@ -416,42 +418,80 @@ class _PostListingScreenState extends State<PostListingScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _kSurface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: _kGold, width: 1),
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: _kGold, width: 1.2),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [_kGold, _kGoldLight],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: _kGold.withValues(alpha: 0.35),
+                    blurRadius: 18,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
               child: const Icon(
-                Icons.check_rounded,
+                Icons.hourglass_top_rounded,
                 color: _kMaroonDark,
-                size: 40,
+                size: 38,
               ),
             ),
             const SizedBox(height: 18),
             const Text(
-              'Listing Posted!',
+              'Submitted for Approval!',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your room listing has been published. Users can now find and contact you!',
-              style: TextStyle(color: _kMuted, fontSize: 13, height: 1.4),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF39C12).withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFF39C12).withValues(alpha: 0.5),
+                  width: 0.8,
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.pending_actions_rounded,
+                      color: Color(0xFFF39C12), size: 13),
+                  SizedBox(width: 5),
+                  Text(
+                    'Status: Pending Admin Review',
+                    style: TextStyle(
+                      color: Color(0xFFF39C12),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Your room listing has been submitted successfully.\n\nTo ensure community trust and safety, all new room listings require administrator approval before appearing publicly. You can track review status in your Host Dashboard.',
+              style: TextStyle(color: _kMuted, fontSize: 12.5, height: 1.45),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 22),
             SizedBox(
               width: double.infinity,
               height: 46,
@@ -466,11 +506,12 @@ class _PostListingScreenState extends State<PostListingScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: _kGold.withValues(alpha: 0.4)),
                   ),
                 ),
                 child: const Text(
-                  'Great!',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  'Understood, View Dashboard',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
                 ),
               ),
             ),

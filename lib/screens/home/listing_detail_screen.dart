@@ -167,6 +167,67 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (data['status'] == 'pending') ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF39C12).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: const Color(0xFFF39C12).withValues(alpha: 0.45)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.hourglass_top_rounded,
+                              color: Color(0xFFF39C12), size: 18),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Awaiting Admin Approval • This room is currently under moderation review and will appear publicly once approved.',
+                              style: TextStyle(
+                                color: Color(0xFFF39C12),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (data['status'] == 'rejected') ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE74C3C).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: const Color(0xFFE74C3C).withValues(alpha: 0.45)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cancel_outlined,
+                              color: Color(0xFFE74C3C), size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Listing Rejected • ${data['rejectionReason']?.isNotEmpty == true ? data['rejectionReason'] : 'Did not meet platform guidelines.'}',
+                              style: const TextStyle(
+                                color: Color(0xFFE74C3C),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

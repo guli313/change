@@ -382,29 +382,65 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _fetchRealListingsIfAvailable() async {
     try {
-      final real = await ListingsService.fetchListings(limit: 20);
-      if (real.isNotEmpty && mounted) {
+      final reqApproval = await ListingsService.isApprovalRequired();
+      if (mounted) {
+        setState(() => _settingRequireApproval = reqApproval);
+      }
+
+      // 1. Fetch real pending listings from users/hosts awaiting Admin review
+      final pendingRooms = await ListingsService.fetchPendingListings();
+      if (mounted && pendingRooms.isNotEmpty) {
         setState(() {
-          // Merge with sample active listings
-          for (final item in real) {
-            _activeListings.insert(0, {
-              'id': item.id,
-              'title': item.title,
-              'city': item.city,
-              'rent': item.rentDisplay,
-              'roomType': item.tag.isNotEmpty ? item.tag : 'Room',
-              'hostName': 'Verified Host',
-              'isFeatured': item.isFeatured,
-              'status': 'Active',
-              'views': 120,
-              'inquiries': 5,
-              'imageUrl': item.imageUrl ??
+          for (final p in pendingRooms) {
+            final Map<String, dynamic> item = {
+              'id': p.id,
+              'title': p.title,
+              'city': p.city,
+              'hostName': p.hostName ?? 'User / Host',
+              'hostPhone': p.hostPhone ?? '+92 300 0000000',
+              'hostEmail': p.hostEmail ?? '',
+              'rent': p.rentDisplay,
+              'roomType': p.roomType ?? (p.tag.isNotEmpty ? p.tag : 'Single Room'),
+              'tag': p.tag,
+              'submittedAt': p.submittedAt ?? 'Recent',
+              'description': p.description ?? 'Room awaiting administrative review.',
+              'imageUrl': p.imageUrl ??
                   'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80',
-            });
+            };
+            if (!_pendingListings.any((x) => x['id'] == p.id)) {
+              _pendingListings.insert(0, item);
+            }
           }
         });
       }
-    } catch (_) {}
+
+      // 2. Fetch approved active listings
+      final real = await ListingsService.fetchListings(approvedOnly: true, limit: 30);
+      if (real.isNotEmpty && mounted) {
+        setState(() {
+          for (final item in real) {
+            if (!_activeListings.any((l) => l['id'] == item.id)) {
+              _activeListings.insert(0, {
+                'id': item.id,
+                'title': item.title,
+                'city': item.city,
+                'rent': item.rentDisplay,
+                'roomType': item.tag.isNotEmpty ? item.tag : 'Room',
+                'hostName': item.hostName ?? 'Verified Host',
+                'isFeatured': item.isFeatured,
+                'status': 'Active',
+                'views': 120,
+                'inquiries': 5,
+                'imageUrl': item.imageUrl ??
+                    'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80',
+              });
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('_fetchRealListingsIfAvailable error: $e');
+    }
   }
 
   void _showSnackBar(String text, {bool isSuccess = true}) {
@@ -2005,179 +2041,249 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // =====================================================================
 
   Widget _buildPendingListingsView() {
-    if (_pendingListings.isEmpty) {
-      return _buildEmptyPlaceholder(
-        'All caught up! No pending listings awaiting moderation.',
-        Icons.verified_outlined,
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _pendingListings.length,
-      itemBuilder: (context, index) {
-        final pending = _pendingListings[index];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: _kCardBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _kWarning.withOpacity(0.6), width: 1.2),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Pending Alert Banner
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: _kWarning.withOpacity(0.15),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.pending_actions, color: _kWarning, size: 16),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Awaiting Admin Review',
-                          style: TextStyle(
-                            color: _kWarning,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      pending['submittedAt'],
-                      style: const TextStyle(color: _kMutedText, fontSize: 11),
-                    ),
-                  ],
-                ),
+    return RefreshIndicator(
+      color: _kGold,
+      backgroundColor: _kSurface,
+      onRefresh: _fetchRealListingsIfAvailable,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Moderation Overview Banner
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_kMaroonStart, _kMaroonEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              ClipRRect(
-                child: Image.network(
-                  pending['imageUrl'],
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 150,
-                    color: _kSurface,
-                    child: const Center(
-                      child: Icon(Icons.home, color: _kMutedText, size: 40),
-                    ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _kGold.withValues(alpha: 0.4), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _kGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.security_update_good_rounded,
+                      color: _kGold, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Room Moderation Queue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Admin approval is required for all new user & host rooms. ${_pendingListings.length} pending review.',
+                        style:
+                            const TextStyle(color: _kGoldLight, fontSize: 11.5),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            pending['title'],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          pending['rent'],
-                          style: const TextStyle(
-                            color: _kGoldLight,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${pending['city']} • ${pending['roomType']} • ${pending['tag']}',
-                      style: const TextStyle(color: _kGold, fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      pending['description'],
-                      style: const TextStyle(color: _kMutedText, fontSize: 12),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _kSurface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.person, color: _kGold, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Submitted by: ${pending['hostName']} (${pending['hostPhone']})',
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(color: _kBorder, height: 22),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _rejectPendingDialog(pending),
-                            icon: const Icon(Icons.close, color: _kDanger, size: 16),
-                            label: const Text(
-                              'Reject',
-                              style: TextStyle(color: _kDanger, fontSize: 13),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: _kDanger),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _approvePendingListing(pending),
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text(
-                              'Approve & Publish',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _kSuccess,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                IconButton(
+                  tooltip: 'Refresh Queue',
+                  onPressed: _fetchRealListingsIfAvailable,
+                  icon: const Icon(Icons.refresh, color: _kGold),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+          if (_pendingListings.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: _buildEmptyPlaceholder(
+                'All caught up! No pending listings awaiting moderation.',
+                Icons.verified_outlined,
+              ),
+            )
+          else
+            ..._pendingListings.map((pending) => _buildPendingListingCard(pending)),
+        ],
+      ),
     );
   }
 
-  void _approvePendingListing(Map<String, dynamic> pending) {
+  Widget _buildPendingListingCard(Map<String, dynamic> pending) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: _kCardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kWarning.withOpacity(0.6), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Pending Alert Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _kWarning.withOpacity(0.15),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.pending_actions,
+                        color: _kWarning, size: 16),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Awaiting Admin Review',
+                      style: TextStyle(
+                        color: _kWarning,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  pending['submittedAt'] ?? 'Recently',
+                  style: const TextStyle(color: _kMutedText, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ClipRRect(
+            child: Image.network(
+              pending['imageUrl'] ?? '',
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                height: 150,
+                color: _kSurface,
+                child: const Center(
+                  child: Icon(Icons.home, color: _kMutedText, size: 40),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        pending['title'] ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      pending['rent'] ?? '',
+                      style: const TextStyle(
+                        color: _kGoldLight,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${pending['city']} • ${pending['roomType']} • ${pending['tag']}',
+                  style: const TextStyle(color: _kGold, fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  pending['description'] ?? '',
+                  style: const TextStyle(color: _kMutedText, fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _kSurface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person, color: _kGold, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Submitted by: ${pending['hostName']} (${pending['hostPhone']})${pending['hostEmail'] != null && pending['hostEmail'].toString().isNotEmpty ? ' • ${pending['hostEmail']}' : ''}',
+                          style:
+                              const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: _kBorder, height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _rejectPendingDialog(pending),
+                        icon:
+                            const Icon(Icons.close, color: _kDanger, size: 16),
+                        label: const Text(
+                          'Reject',
+                          style: TextStyle(color: _kDanger, fontSize: 13),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: _kDanger),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _approvePendingListing(pending),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text(
+                          'Approve & Publish',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kSuccess,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _approvePendingListing(Map<String, dynamic> pending) async {
+    final id = pending['id']?.toString() ?? '';
+    await ListingsService.approveListing(id);
+
     setState(() {
       _pendingListings.removeWhere((p) => p['id'] == pending['id']);
       _activeListings.insert(0, {
@@ -2238,8 +2344,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: const Text('Cancel', style: TextStyle(color: _kMutedText)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(ctx);
+                final id = pending['id']?.toString() ?? '';
+                await ListingsService.rejectListing(id, reason: reason);
                 setState(() {
                   _pendingListings.removeWhere((p) => p['id'] == pending['id']);
                 });
@@ -3114,9 +3222,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 subtitle: const Text('When enabled, new host listings go to Pending queue before appearing publicly.', style: TextStyle(color: _kMutedText, fontSize: 11)),
                 value: _settingRequireApproval,
                 activeColor: _kGold,
-                onChanged: (val) {
+                onChanged: (val) async {
                   setState(() => _settingRequireApproval = val);
-                  _showSnackBar('Listing approval policy updated');
+                  await ListingsService.setApprovalRequired(val);
+                  _showSnackBar(val
+                      ? 'Listing approval policy updated: Admin approval required for all new rooms'
+                      : 'Listing approval policy updated: Direct publishing enabled');
                 },
               ),
               const Divider(color: _kBorder, height: 1),
