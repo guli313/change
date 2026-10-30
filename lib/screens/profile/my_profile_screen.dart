@@ -8,6 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/local_file.dart';
 import '../auth/login_screen.dart';
 import '../listing/post_listing_screen.dart';
+import '../home/favorites_screen.dart';
+import '../home/host_dashboard.dart';
+import '../../services/auth_service.dart';
 import 'edit_profile_screen.dart';
 
 // ---- Theme colors (matching Login/Signup/Home screens) ----
@@ -73,6 +76,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       }
       _isLoading = false;
     });
+  }
+
+  Future<void> _switchToHostMode() async {
+    await AuthService.setUserRole(UserRole.host);
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const HostDashboard()),
+      (route) => false,
+    );
   }
 
   Map<String, String> _getProfileData() {

@@ -13,7 +13,8 @@ const Color _kBorder = Color(0xFF2A2626);
 const Color _kMutedText = Color(0xFF9B9B9B);
 
 class RequestsScreen extends StatefulWidget {
-  const RequestsScreen({super.key});
+  final String? initialFilter;
+  const RequestsScreen({super.key, this.initialFilter});
 
   @override
   State<RequestsScreen> createState() => _RequestsScreenState();
@@ -23,8 +24,14 @@ class _RequestsScreenState extends State<RequestsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
-  String _selectedFilter = 'All'; // 'All', 'Incoming', 'Sent'
+  late String _selectedFilter;
   bool _isAppBarSearchOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedFilter = widget.initialFilter ?? 'All';
+  }
 
   final List<Map<String, dynamic>> _allRequests = [
     {

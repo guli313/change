@@ -8,7 +8,6 @@ import '../chat/chat_screen.dart';
 import 'favorites_screen.dart';
 import 'find_room_screen.dart';
 import 'home_screen.dart';
-import 'host_dashboard.dart';
 import 'listing_detail_screen.dart';
 import 'map_screen.dart';
 import 'requests_screen.dart';
@@ -113,43 +112,6 @@ class _RenterDashboardState extends State<RenterDashboard> {
     );
   }
 
-  Future<void> _switchToHostMode() async {
-    await AuthService.setUserRole(UserRole.host);
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (c) => const HostDashboard()),
-    );
-  }
-
-  Widget _buildRoleSwitchButton() {
-    return InkWell(
-      onTap: _switchToHostMode,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: _kGold.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.apartment_rounded, color: _kGold, size: 13),
-            SizedBox(width: 4),
-            Text(
-              'Host Mode',
-              style: TextStyle(color: _kGold, fontSize: 10.5, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(width: 2),
-            Icon(Icons.swap_horiz, color: _kGold, size: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildHeader(String name, String city) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
@@ -209,35 +171,28 @@ class _RenterDashboardState extends State<RenterDashboard> {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _kMaroonStart.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _kMaroonStart.withValues(alpha: 0.5)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _kMaroonStart.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _kMaroonStart.withValues(alpha: 0.5)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.person_search_rounded, color: _kGoldLight, size: 11),
+                SizedBox(width: 3),
+                Text(
+                  'USER / SEEKER',
+                  style: TextStyle(
+                    color: _kGoldLight,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.person_search_rounded, color: _kGoldLight, size: 11),
-                    SizedBox(width: 3),
-                    Text(
-                      'USER / SEEKER',
-                      style: TextStyle(
-                        color: _kGoldLight,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 5),
-              _buildRoleSwitchButton(),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -685,10 +640,15 @@ class _RenterDashboardState extends State<RenterDashboard> {
               ),
               const SizedBox(width: 10),
               _action(
-                Icons.apartment_rounded,
-                'Host Hub',
+                Icons.favorite_border,
+                'Favorites',
                 _kGoldLight,
-                _switchToHostMode,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (c) => const FavoritesScreen()),
+                  );
+                },
               ),
             ],
           ),
