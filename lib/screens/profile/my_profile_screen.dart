@@ -540,7 +540,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     email,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                   if (isGuest) ...[
@@ -568,18 +568,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ),
             ),
 
-            // ── Host / List Your Room CTA ──────────────────────────────────
+            // Host Mode CTA (Only place to switch to Host Mode)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PostListingScreen(),
-                    ),
-                  );
-                },
+                onTap: _switchToHostMode,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
@@ -590,11 +583,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    border: Border.all(color: _kGold.withOpacity(0.35), width: 1),
+                    border: Border.all(color: _kGold.withValues(alpha: 0.4), width: 1.2),
                     boxShadow: [
                       BoxShadow(
-                        color: _kMaroonStart.withOpacity(0.25),
-                        blurRadius: 12,
+                        color: _kMaroonStart.withValues(alpha: 0.3),
+                        blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -604,11 +597,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: _kGold.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _kGold.withValues(alpha: 0.35)),
                         ),
                         child: const Icon(
-                          Icons.add_home_work_outlined,
+                          Icons.apartment_rounded,
                           color: Color(0xFFE4C98A),
                           size: 28,
                         ),
@@ -617,21 +611,41 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'List Your Room',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Host Mode',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: _kGold,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'HOST HUB',
+                                    style: TextStyle(
+                                      color: _kBackground,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Post your listing free & find a roommate today',
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Switch to Host Dashboard to manage your properties, views & requests',
                               style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 12,
+                                fontSize: 11.5,
                               ),
                             ),
                           ],
@@ -648,7 +662,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Post Now',
+                              'Switch',
                               style: TextStyle(
                                 color: _kMaroonEnd,
                                 fontSize: 12,
@@ -657,9 +671,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             ),
                             SizedBox(width: 4),
                             Icon(
-                              Icons.arrow_forward_rounded,
+                              Icons.swap_horiz_rounded,
                               color: _kMaroonEnd,
-                              size: 14,
+                              size: 16,
                             ),
                           ],
                         ),
@@ -671,16 +685,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             ),
             const SizedBox(height: 14),
 
-            // ── Quick Shortcuts (Hosting) ────────────────────────────────
+            // Quick Shortcuts
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   Expanded(
                     child: _ShortcutTile(
-                      icon: Icons.upload_file_outlined,
-                      label: 'My Listings',
-                      sublabel: '0 active',
+                      icon: Icons.add_home_work_outlined,
+                      label: 'List Your Room',
+                      sublabel: 'Post for free',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -698,8 +712,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       label: 'Favorites',
                       sublabel: 'Saved rooms',
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Coming soon: Favorites')),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen(),
+                          ),
                         );
                       },
                     ),
@@ -862,7 +879,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: _kGold.withOpacity(0.1),
+            backgroundColor: _kGold.withValues(alpha: 0.1),
             child: Icon(icon, color: _kGold),
           ),
           const SizedBox(width: 16),
@@ -949,7 +966,7 @@ class _ShortcutTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFCBA35C).withOpacity(0.15),
+                color: const Color(0xFFCBA35C).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: const Color(0xFFCBA35C), size: 20),

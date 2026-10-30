@@ -62,7 +62,7 @@ class _SignupScreenState extends State<SignupScreen> {
         return;
       }
 
-      // ✅ Insert profile into database
+      // âœ… Insert profile into database
       try {
         await Supabase.instance.client.from('profiles').upsert({
           'id': user.id,

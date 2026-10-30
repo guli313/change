@@ -3,8 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:roommate_finder/screens/admin/admin_dashboard_screen.dart';
 import 'package:roommate_finder/screens/auth/forgot_password_screen.dart';
-import 'package:roommate_finder/screens/auth/role_selection_screen.dart';
 import 'package:roommate_finder/screens/auth/signup_screen.dart';
+import 'package:roommate_finder/screens/home/host_dashboard.dart';
+import 'package:roommate_finder/screens/home/renter_dashboard.dart';
 import 'package:roommate_finder/services/auth_service.dart';
 
 // ---- Luxury Dark & Gold/Maroon Theme ----
@@ -51,11 +52,19 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // All other users go to screen with "Continue as Host" or "Continue as User"
+    if (role == UserRole.host) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HostDashboard()),
+      );
+      return;
+    }
+
+    // Default users go directly to Renter Dashboard
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const RoleSelectionScreen(showSkip: false),
+        builder: (context) => const RenterDashboard(),
       ),
     );
   }
@@ -104,10 +113,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _skipForNow() async {
     if (!mounted) return;
+    await AuthService.setUserRole(UserRole.renter);
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const RoleSelectionScreen(showSkip: true),
+        builder: (context) => const RenterDashboard(),
       ),
     );
   }
