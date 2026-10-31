@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../services/auth_service.dart';
+import '../home/renter_dashboard.dart';
 import 'login_screen.dart';
-import 'role_selection_screen.dart';
 
 // ---- Theme colors (same palette as LoginScreen) ----
 const Color _kBackground = Color(0xFF0D0D0D);
@@ -84,10 +85,11 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       );
 
+      await AuthService.setUserRole(UserRole.renter);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const RoleSelectionScreen(showSkip: true),
+          builder: (context) => const RenterDashboard(),
         ),
       );
     } catch (e) {
