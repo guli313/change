@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/auth_service.dart';
 import '../../services/listings_service.dart';
+import '../../services/host_request_service.dart';
 import '../home/home_screen.dart';
 import '../home/host_dashboard.dart';
 import '../home/renter_dashboard.dart';
@@ -28,6 +30,7 @@ enum AdminSection {
   dashboard,
   manageUsers,
   manageHosts,
+  hostApplications,
   manageListings,
   pendingListings,
   reports,
@@ -65,6 +68,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Sample data & synced listings
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _hosts = [];
+  List<HostRequest> _hostRequests = [];
+  String _hostReqFilter = 'All'; // All, Pending, Approved, Rejected
+  String _hostReqSearchQuery = '';
   List<Map<String, dynamic>> _pendingListings = [];
   List<Map<String, dynamic>> _activeListings = [];
   List<Map<String, dynamic>> _reports = [];
@@ -378,6 +384,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ];
 
     _fetchRealListingsIfAvailable();
+    _loadHostRequests();
+  }
+
+  Future<void> _loadHostRequests() async {
+    try {
+      final reqs = await HostRequestService.getAllRequests();
+      if (mounted) {
+        setState(() => _hostRequests = reqs);
+      }
+    } catch (e) {
+      debugPrint('_loadHostRequests error: $e');
+    }
   }
 
   Future<void> _fetchRealListingsIfAvailable() async {
@@ -578,6 +596,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return 'Manage Users';
       case AdminSection.manageHosts:
         return 'Manage Hosts';
+      case AdminSection.hostApplications:
+        return 'Host & Owner Applications';
       case AdminSection.manageListings:
         return 'Manage Listings';
       case AdminSection.pendingListings:
@@ -607,6 +627,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return _buildManageUsersView();
       case AdminSection.manageHosts:
         return _buildManageHostsView();
+      case AdminSection.hostApplications:
+        return _buildHostApplicationsView();
       case AdminSection.manageListings:
         return _buildManageListingsView();
       case AdminSection.pendingListings:
@@ -712,6 +734,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   title: 'Manage Hosts',
                   section: AdminSection.manageHosts,
                   badge: '${_hosts.length}',
+                ),
+                _buildDrawerItem(
+                  icon: Icons.assignment_ind_rounded,
+                  title: 'Host Applications',
+                  section: AdminSection.hostApplications,
+                  badge: '${_hostRequests.where((r) => r.status == 'pending').length}',
+                  badgeColor: _kWarning,
                 ),
                 const Divider(color: _kBorder, height: 16, indent: 16, endIndent: 16),
                 _buildDrawerSectionHeader('LISTINGS & MODERATION'),
@@ -1195,6 +1224,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final items = [
       {'title': 'Manage Users', 'icon': Icons.people, 'section': AdminSection.manageUsers},
       {'title': 'Manage Hosts', 'icon': Icons.home_work, 'section': AdminSection.manageHosts},
+      {'title': 'Host Requests', 'icon': Icons.assignment_ind_rounded, 'section': AdminSection.hostApplications},
       {'title': 'Listings', 'icon': Icons.apartment, 'section': AdminSection.manageListings},
       {'title': 'Pending', 'icon': Icons.pending, 'section': AdminSection.pendingListings},
       {'title': 'Reports', 'icon': Icons.report_problem, 'section': AdminSection.reports},
@@ -1776,6 +1806,716 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ],
     );
+  }
+
+  // =====================================================================
+  // HOST & OWNER APPLICATIONS VIEW
+  // =====================================================================
+
+  Widget _buildHostApplicationsView() {
+    final filtered = _hostRequests.where((req) {
+      if (_hostReqFilter != 'All' &&
+          req.status.toLowerCase() != _hostReqFilter.toLowerCase()) {
+        return false;
+      }
+      if (_hostReqSearchQuery.isNotEmpty) {
+        final q = _hostReqSearchQuery.toLowerCase();
+        final matches = req.ownerName.toLowerCase().contains(q) ||
+            req.userEmail.toLowerCase().contains(q) ||
+            req.city.toLowerCase().contains(q) ||
+            req.roomTitle.toLowerCase().contains(q) ||
+            req.phone.toLowerCase().contains(q);
+        if (!matches) return false;
+      }
+      return true;
+    }).toList();
+
+    final pendingCount =
+        _hostRequests.where((r) => r.status.toLowerCase() == 'pending').length;
+    final approvedCount =
+        _hostRequests.where((r) => r.status.toLowerCase() == 'approved').length;
+    final rejectedCount =
+        _hostRequests.where((r) => r.status.toLowerCase() == 'rejected').length;
+
+    return RefreshIndicator(
+      color: _kGold,
+      backgroundColor: _kSurface,
+      onRefresh: _loadHostRequests,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Moderation Overview Banner
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_kMaroonStart, _kMaroonEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _kGold.withOpacity(0.4), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _kGold.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.assignment_ind_rounded,
+                      color: _kGoldLight, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Owner & Host Applications Queue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Review owner details & room pics. Approve to make user a Host and publish room. $pendingCount pending.',
+                        style:
+                            const TextStyle(color: _kGoldLight, fontSize: 11.5),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Refresh Queue',
+                  onPressed: _loadHostRequests,
+                  icon: const Icon(Icons.refresh, color: _kGold),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Search Box
+          TextField(
+            onChanged: (val) => setState(() => _hostReqSearchQuery = val),
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search by owner name, phone, city, room title...',
+              hintStyle: const TextStyle(color: _kMutedText, fontSize: 12),
+              prefixIcon: const Icon(Icons.search, color: _kGold, size: 20),
+              filled: true,
+              fillColor: _kSurface,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _kBorder),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _kBorder),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildHostReqFilterChip('All', _hostRequests.length),
+                const SizedBox(width: 8),
+                _buildHostReqFilterChip('Pending', pendingCount,
+                    color: _kWarning),
+                const SizedBox(width: 8),
+                _buildHostReqFilterChip('Approved', approvedCount,
+                    color: _kSuccess),
+                const SizedBox(width: 8),
+                _buildHostReqFilterChip('Rejected', rejectedCount,
+                    color: _kDanger),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          if (filtered.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 40),
+              child: _buildEmptyPlaceholder(
+                'No host applications match the selected filter.',
+                Icons.assignment_turned_in_outlined,
+              ),
+            )
+          else
+            ...filtered.map((req) => _buildHostRequestCard(req)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHostReqFilterChip(String label, int count, {Color? color}) {
+    final isSelected = _hostReqFilter == label;
+    final chipColor = color ?? _kGold;
+    return ChoiceChip(
+      label: Text('$label ($count)'),
+      selected: isSelected,
+      onSelected: (val) {
+        if (val) setState(() => _hostReqFilter = label);
+      },
+      selectedColor: chipColor.withOpacity(0.25),
+      backgroundColor: _kSurface,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : _kMutedText,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
+      ),
+      side: BorderSide(
+        color: isSelected ? chipColor : _kBorder,
+      ),
+    );
+  }
+
+  Widget _buildHostRequestCard(HostRequest req) {
+    final status = req.status.toLowerCase();
+    Color statusColor = _kWarning;
+    String statusLabel = 'Awaiting Admin Review';
+    if (status == 'approved') {
+      statusColor = _kSuccess;
+      statusLabel = 'Approved & Live Host';
+    } else if (status == 'rejected') {
+      statusColor = _kDanger;
+      statusLabel = 'Rejected';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: _kCardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: statusColor.withOpacity(0.6), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status Strip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.15),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      status == 'approved'
+                          ? Icons.check_circle_rounded
+                          : status == 'rejected'
+                              ? Icons.cancel_rounded
+                              : Icons.hourglass_top_rounded,
+                      color: statusColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  req.submittedAt,
+                  style: const TextStyle(color: _kMutedText, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Owner Info Row
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _kSurface,
+                        border: Border.all(color: _kGold),
+                      ),
+                      child:
+                          const Icon(Icons.person, color: _kGold, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            req.ownerName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Phone: ${req.phone} • Email: ${req.userEmail}',
+                            style: const TextStyle(
+                                color: _kGoldLight, fontSize: 12),
+                          ),
+                          if (req.cnic.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'CNIC: ${req.cnic} • Address: ${req.address}',
+                              style: const TextStyle(
+                                  color: _kMutedText, fontSize: 11.5),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(color: _kBorder, height: 20),
+
+                // Room Details
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        req.roomTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _kGold.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: _kGold.withOpacity(0.5)),
+                      ),
+                      child: Text(
+                        'PKR ${req.rent} / Mo',
+                        style: const TextStyle(
+                          color: _kGoldLight,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${req.area}, ${req.city} • ${req.roomType} • ${req.genderPreference}${req.deposit > 0 ? ' • Deposit: PKR ${req.deposit}' : ''}',
+                  style: const TextStyle(color: _kGold, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  req.description,
+                  style:
+                      const TextStyle(color: _kMutedText, fontSize: 12, height: 1.4),
+                ),
+                if (req.amenities.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: req.amenities.map((a) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _kSurface,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: _kBorder),
+                        ),
+                        child: Text(
+                          a,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 10.5),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+
+                // Room Pictures Section
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.photo_library_outlined,
+                            color: _kGold, size: 15),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Room Pictures (${req.roomImages.length}):',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'Tap to zoom',
+                      style: TextStyle(color: _kMutedText, fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (req.roomImages.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _kSurface,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('No room pictures attached.',
+                        style: TextStyle(color: _kMutedText, fontSize: 12)),
+                  )
+                else
+                  SizedBox(
+                    height: 100,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: req.roomImages.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (ctx, idx) {
+                        final img = req.roomImages[idx];
+                        return InkWell(
+                          onTap: () => _showImagePreviewDialog(img),
+                          borderRadius: BorderRadius.circular(8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: _buildHostImageThumbnail(img, 100, 100),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                const Divider(color: _kBorder, height: 22),
+
+                // Action Buttons
+                if (status == 'pending') ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showRejectHostDialog(req),
+                          icon: const Icon(Icons.close,
+                              color: _kDanger, size: 16),
+                          label: const Text(
+                            'Reject',
+                            style: TextStyle(color: _kDanger, fontSize: 13),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: _kDanger),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _approveHostApplication(req),
+                          icon: const Icon(Icons.check, size: 16),
+                          label: const Text(
+                            'Accept & Make Host',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _kSuccess,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else if (status == 'approved') ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _kSuccess.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _kSuccess.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_rounded,
+                            color: _kSuccess, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Approved on ${req.reviewedAt ?? 'Recently'} • Host Account Active & Room Published',
+                            style: const TextStyle(
+                                color: _kSuccess,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _kDanger.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _kDanger.withOpacity(0.4)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.cancel_rounded,
+                                color: _kDanger, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Rejected on ${req.reviewedAt ?? 'Recently'}',
+                              style: const TextStyle(
+                                  color: _kDanger,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        if (req.rejectionReason != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Reason: ${req.rejectionReason}',
+                            style: const TextStyle(
+                                color: Color(0xFFFFB3B3), fontSize: 11.5),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHostImageThumbnail(String source, double width, double height) {
+    if (source.startsWith('data:image')) {
+      final base64Part = source.split(',').last;
+      return Image.memory(
+        base64Decode(base64Part),
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+    if (source.startsWith('http')) {
+      return Image.network(
+        source,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          width: width,
+          height: height,
+          color: _kSurface,
+          child: const Icon(Icons.image, color: _kMutedText),
+        ),
+      );
+    }
+    return Container(
+      width: width,
+      height: height,
+      color: _kSurface,
+      child: const Icon(Icons.image, color: _kMutedText),
+    );
+  }
+
+  void _showImagePreviewDialog(String source) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildHostImageThumbnail(source, double.infinity, 380),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black87,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 18),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRejectHostDialog(HostRequest req) {
+    String selectedReason = 'Room pictures are not clear or missing';
+    final customCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: _kSurface,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          title: const Row(
+            children: [
+              Icon(Icons.cancel_outlined, color: _kDanger),
+              SizedBox(width: 8),
+              Text(
+                'Reject Host Request',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Specify why the host request for "${req.ownerName}" is being rejected:',
+                  style: const TextStyle(color: _kMutedText, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                ...[
+                  'Room pictures are not clear or missing',
+                  'Inaccurate or unrealistic rent amount',
+                  'Incomplete room description or address',
+                  'Owner phone / CNIC verification failed',
+                  'Other',
+                ].map((reason) {
+                  return RadioListTile<String>(
+                    title: Text(reason,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 12.5)),
+                    value: reason,
+                    groupValue: selectedReason,
+                    activeColor: _kGold,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedReason = val);
+                      }
+                    },
+                  );
+                }),
+                if (selectedReason == 'Other') ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: customCtrl,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Enter custom rejection reason...',
+                      hintStyle:
+                          const TextStyle(color: _kMutedText, fontSize: 12),
+                      filled: true,
+                      fillColor: _kCardBg,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: _kBorder),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: _kMutedText)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final finalReason = selectedReason == 'Other' &&
+                        customCtrl.text.trim().isNotEmpty
+                    ? customCtrl.text.trim()
+                    : selectedReason;
+
+                await HostRequestService.rejectRequest(req.id, finalReason);
+                await _loadHostRequests();
+                _showSnackBar('Host request from "${req.ownerName}" rejected.',
+                    isSuccess: false);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kDanger,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirm Reject'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _approveHostApplication(HostRequest req) async {
+    await HostRequestService.approveRequest(req.id);
+    await _loadHostRequests();
+    _showSnackBar(
+        'Congratulations! "${req.ownerName}" is now an approved Host and their room is live!');
   }
 
   // =====================================================================

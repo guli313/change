@@ -11,6 +11,9 @@ import '../listing/post_listing_screen.dart';
 import '../home/favorites_screen.dart';
 import '../home/host_dashboard.dart';
 import '../../services/auth_service.dart';
+import '../../services/host_request_service.dart';
+import 'create_owner_account_screen.dart';
+import 'host_request_status_screen.dart';
 import 'edit_profile_screen.dart';
 
 // ---- Theme colors (matching Login/Signup/Home screens) ----
@@ -78,14 +81,44 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     });
   }
 
-  Future<void> _switchToHostMode() async {
-    await AuthService.setUserRole(UserRole.host);
+  Future<void> _handleSwitchToOwnerOrHostAccount() async {
+    final currentRole = await AuthService.getUserRole();
+    if (currentRole == UserRole.host) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HostDashboard()),
+      );
+      return;
+    }
+
+    final latestReq = await HostRequestService.getLatestRequestForCurrentUser();
+
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HostDashboard()),
-      (route) => false,
-    );
+
+    if (latestReq == null) {
+      // No request submitted yet -> Open Create Owner Account Screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CreateOwnerAccountScreen(),
+        ),
+      );
+      _loadUser();
+    } else {
+      // Request exists: pending, approved, or rejected -> Open status screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HostRequestStatusScreen(request: latestReq),
+        ),
+      );
+      _loadUser();
+    }
+  }
+
+  Future<void> _switchToHostMode() async {
+    await _handleSwitchToOwnerOrHostAccount();
   }
 
   Map<String, String> _getProfileData() {
@@ -427,7 +460,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             color: _kSurface,
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
-              if (value == 'switch') {
+              if (value == 'become_owner') {
+                _handleSwitchToOwnerOrHostAccount();
+              } else if (value == 'switch_login') {
                 _confirmSignOut(
                   title: 'Switch Account',
                   content:
@@ -444,12 +479,37 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'switch',
-                child: Text('Switch Account', style: TextStyle(color: Colors.white)),
+                value: 'become_owner',
+                child: Row(
+                  children: [
+                    Icon(Icons.apartment_rounded, color: _kGold, size: 18),
+                    SizedBox(width: 8),
+                    Text('Switch to Owner Account',
+                        style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'switch_login',
+                child: Row(
+                  children: [
+                    Icon(Icons.switch_account_outlined,
+                        color: Colors.white70, size: 18),
+                    SizedBox(width: 8),
+                    Text('Switch User Login',
+                        style: TextStyle(color: Colors.white)),
+                  ],
+                ),
               ),
               const PopupMenuItem(
                 value: 'logout',
-                child: Text('Logout', style: TextStyle(color: Colors.white)),
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.redAccent, size: 18),
+                    SizedBox(width: 8),
+                    Text('Logout', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -813,19 +873,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            _confirmSignOut(
-                              title: 'Switch Account',
-                              content:
-                                  'You will be logged out and can sign in with a different account.',
-                              onConfirm: _switchAccount,
-                            );
-                          },
-                          icon: const Icon(Icons.switch_account),
+                          onPressed: _handleSwitchToOwnerOrHostAccount,
+                          icon: const Icon(Icons.switch_account, color: _kGold),
                           label: const Text('Switch Account'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: const BorderSide(color: _kBorder),
+                            side: const BorderSide(color: _kGold, width: 1.2),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
