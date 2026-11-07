@@ -77,7 +77,7 @@ const List<Map<String, String>> _kSampleListings = [
     'rent': 'PKR 22,000',
     'currency': 'PKR',
     'period': '/month',
-    'tag': ''
+    'tag': '',
     'description': 'Shared room in DHA Karachi with modern facilities.',
     'roomType': 'Shared Room',
   },
