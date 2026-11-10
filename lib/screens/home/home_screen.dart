@@ -58,7 +58,7 @@ const List<Map<String, String>> _kSampleListings = [
     'roomType': 'Single Room',
   },
   {
-    'id': 'sample_',
+    'id': 'sample_3',
     'title': 'Room near FAST',
     'city': 'Islamabad',
     'country': 'Pakistan',
