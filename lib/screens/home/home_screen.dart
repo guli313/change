@@ -131,7 +131,7 @@ const List<Map<String, String>> _kSampleListings = [
   },
   {
     'id': 'sample_9'
-    'title': 'Shared Flat'
+    'title': 'Shared Flat' ,
     'city': 'Kasur',
     'country': 'Pakistan',
     'rent': 'PKR 9,500',
