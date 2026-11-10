@@ -130,7 +130,7 @@ const List<Map<String, String>> _kSampleListings = [
     'roomType': 'Single Room',
   },
   {
-    'id': 'sample_9'
+    'id': 'sample_9' ,
     'title': 'Shared Flat' ,
     'city': 'Kasur',
     'country': 'Pakistan',
