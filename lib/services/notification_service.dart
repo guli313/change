@@ -12,7 +12,7 @@ class NotificationService {
       List.unmodifiable(_notifications);
 
   static void addNotification({
-    required String title,
+    required String titles,
     required String subtitle,
     required String body,
   }) {
