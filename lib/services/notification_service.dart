@@ -2,7 +2,7 @@ class NotificationService {
   static final List<Map<String, String>> _notifications = [
     {
       'title': 'Welcome to Roommate Finder',
-      'subtitle': 'Notifications are ready',
+      'subtitle: 'Notifications are ready',
       'body':
           'Tap the notification bell anytime to see the latest posts from other users.',
     },
