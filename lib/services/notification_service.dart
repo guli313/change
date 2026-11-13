@@ -27,3 +27,4 @@ class NotificationService {
     _notifications.clear();
   }
 }
+;
