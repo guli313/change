@@ -19,7 +19,7 @@ class NotificationService {
     _notifications.insert(0, {
       'title': title,
       'subtitle': subtitle,
-      'body': body,
+      'body': body
     });
   }
 
