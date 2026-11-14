@@ -24,6 +24,6 @@ class NotificationService {
   }
 
   static void clearNotifications() {
-    _notifications.clear(
+    _notifications.clear();
   }
 }
