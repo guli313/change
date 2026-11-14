@@ -18,7 +18,7 @@ class NotificationService {
   }) {
     _notifications.insert(0, {
       'title': title,
-      'subtitle': subtitle,''
+      'subtitle': subtitle,
       'body': body,
     });
   }
