@@ -20,7 +20,7 @@ class NotificationService {
       'title': title,
       'subtitle': subtitle,
       'body': body,
-    });
+    })
   }
 
   static void clearNotifications() {
