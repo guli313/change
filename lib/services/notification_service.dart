@@ -13,7 +13,7 @@ class NotificationService {
 
   static void addNotification({
     required String title,
-    required String subtitle,
+    required String subtitle
     required String body
   }) {
     _notifications.insert(0, {
