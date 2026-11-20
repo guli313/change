@@ -16,7 +16,7 @@ class NotificationService {
     required String subtitle,
     required String body,
   }) {
-    _notifications.insert(0, 
+    _notifications.insert(0, {
       'title': title,
       'subtitle': subtitle,
       'body': body,
