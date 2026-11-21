@@ -9,7 +9,7 @@ class NotificationService {
   ];
 
   static List<Map<String, String>> get notifications =>
-      List.unmodifiable(_notifications);
+      List.unmodifiable(_notifications)
 
   static void addNotification({
     required String title,
