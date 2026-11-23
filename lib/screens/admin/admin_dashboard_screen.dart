@@ -87,7 +87,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _settingListingDurationDays = 60;
 
   @override
-  void initState() {
+  void initState()
     super.initState();
     _currentSection = widget.initialSection;
     _initializeData();
