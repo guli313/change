@@ -39,7 +39,7 @@ enum AdminSection {
   amenities,
   cities,
   settings,
-  profile
+  profile,
 }
 
 class AdminDashboardScreen extends StatefulWidget {
