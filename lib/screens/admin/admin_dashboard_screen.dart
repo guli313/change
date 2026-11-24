@@ -65,7 +65,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String _userFilter = 'All'; // All, Active, Verified, Blocked
   String _listingCityFilter = 'All';
 
-   Sample data & synced listings
+  // Sample data & synced listings
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _hosts = [];
   List<HostRequest> _hostRequests = [];
