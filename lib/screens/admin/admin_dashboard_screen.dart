@@ -60,7 +60,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // In-memory state for Admin interactive features
   bool _isLoading = false;
-  String _userSearchQuery = '';
+  String _userSearchQuery = ''
   String _listingSearchQuery = '';
   String _userFilter = 'All'; // All, Active, Verified, Blocked
   String _listingCityFilter = 'All';
