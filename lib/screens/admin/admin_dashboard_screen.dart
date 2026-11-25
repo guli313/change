@@ -67,7 +67,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // Sample data & synced listings
   List<Map<String, dynamic>> _users = [];
-  List<Map<String, dynamic>> _hosts = [];
+  List<Map<String, dynamic>> _hosts = []
   List<HostRequest> _hostRequests = [];
   String _hostReqFilter = 'All'; // All, Pending, Approved, Rejected
   String _hostReqSearchQuery = '';
