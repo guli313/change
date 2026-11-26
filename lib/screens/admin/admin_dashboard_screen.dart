@@ -76,12 +76,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> _reports = [];
   List<Map<String, dynamic>> _broadcasts = [];
   List<Map<String, dynamic>> _amenitiesList = [];
-  List<Map<String, dynamic>> _citiesList = []
+  List<Map<String, dynamic>> _citiesList = [];
 
   // Platform Settings State
   bool _settingRequireApproval = true;
   bool _settingEnableChat = true;
-  bool _settingMaintenanceMode = false;
+  bool _settingMaintenanceMode = false
   bool _settingGuestBrowsing = true;
   double _settingCommissionRate = 5.0;
   int _settingListingDurationDays = 60;
