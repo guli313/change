@@ -76,7 +76,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> _reports = [];
   List<Map<String, dynamic>> _broadcasts = [];
   List<Map<String, dynamic>> _amenitiesList = [];
-  List<Map<String, dynamic>> _citiesList = [];
+  List<Map<String, dynamic>> _citiesList = []
 
   // Platform Settings State
   bool _settingRequireApproval = true;
