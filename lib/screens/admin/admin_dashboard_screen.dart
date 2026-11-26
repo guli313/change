@@ -80,7 +80,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // Platform Settings State
   bool _settingRequireApproval = true;
-  bool _settingEnableChat = true;
+  bool _settingEnableChat = true
   bool _settingMaintenanceMode = false;
   bool _settingGuestBrowsing = true;
   double _settingCommissionRate = 5.0;
