@@ -89,7 +89,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _currentSection = widget.initialSection
+    _currentSection = widget.initialSection;
     _initializeData();
   }
 
