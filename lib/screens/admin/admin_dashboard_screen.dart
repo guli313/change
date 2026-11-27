@@ -84,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _settingMaintenanceMode = false;
   bool _settingGuestBrowsing = true;
   double _settingCommissionRate = 5.0;
-  int _settingListingDurationDays = 60;
+  int _settingListingDurationDays = 60
 
   @override
   void initState() {
